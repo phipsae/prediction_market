@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "./DeployHelpers.s.sol";
-import "../contracts/YourContract.sol";
+import "../contracts/PredictionMarketSimple.sol";
 
 /**
  * @notice Deploy script for YourContract contract
@@ -14,7 +14,7 @@ import "../contracts/YourContract.sol";
  * yarn deploy --file DeployYourContract.s.sol  # local anvil chain
  * yarn deploy --file DeployYourContract.s.sol --network optimism # live network (requires keystore)
  */
-contract DeployYourContract is ScaffoldETHDeploy {
+contract DeployPredictionMarket is ScaffoldETHDeploy {
     /**
      * @dev Deployer setup based on `ETH_KEYSTORE_ACCOUNT` in `.env`:
      *      - "scaffold-eth-default": Uses Anvil's account #9 (0xa0Ee7A142d267C1f36714E4a8F75612F20a79720), no password prompt
@@ -25,6 +25,25 @@ contract DeployYourContract is ScaffoldETHDeploy {
      *      - Export contract addresses & ABIs to `nextjs` packages
      */
     function run() external ScaffoldEthDeployerRunner {
-        new YourContract(deployer);
+        // address gambler1 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+        // address gambler2 = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
+        // address gambler3 = 0x90F79bf6EB2c4f870365E785982E1f101E93b906;
+
+        // vm.startBroadcast(deployer);
+        // PredictionMarket predictionMarket = new PredictionMarket(deployer);
+        // vm.stopBroadcast();
+
+        // vm.startBroadcast(gambler1);
+        // predictionMarket.bet{ value: 1 ether }(PredictionMarket.Side.Kamala);
+        // vm.stopBroadcast();
+
+        // vm.startBroadcast(gambler2);
+        // predictionMarket.bet{ value: 1 ether }(PredictionMarket.Side.Trump);
+        // vm.stopBroadcast();
+
+        // vm.startBroadcast(gambler3);
+        // predictionMarket.bet{ value: 1 ether }(PredictionMarket.Side.Kamala);
+        // vm.stopBroadcast();
+        new PredictionMarketSimple(deployer);
     }
 }
