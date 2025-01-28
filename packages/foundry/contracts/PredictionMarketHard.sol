@@ -2,6 +2,11 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 contract PredictionMarketMedium {
+    struct Option {
+        string name;
+        uint256 optionId;
+    }
+
     struct Prediction {
         string question;
         uint256 endTime;
