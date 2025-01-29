@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "./DeployHelpers.s.sol";
 import { DeployPredictionMarket } from "./DeployPredictionMarket.s.sol";
-import { PredictionMarketSimple } from "../contracts/PredictionMarketSimple.sol";
+// import { PredictionMarketSimple } from "../contracts/PredictionMarketSimple.sol";
 /**
  * @notice Main deployment script for all contracts
  * @dev Run this when you want to deploy multiple contracts at once
