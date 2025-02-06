@@ -78,13 +78,7 @@ contract PredictionMarketTrading {
     }
 
     // need to call priceInETH function first to get right amount of tokens to buy
-    function buyTokenWithETH(
-        uint256 _predictionId,
-        uint256 _optionId,
-        uint256 _amountETHrequired,
-        uint256 _amountTokenToBuy
-    ) external payable {
-        require(msg.value == _amountETHrequired, "Must send right amount of ETH");
+    function buyTokenWithETH(uint256 _predictionId, uint256 _optionId, uint256 _amountTokenToBuy) external payable {
         Prediction storage prediction = predictions[_predictionId];
         require(_optionId < prediction.optionsCount, "Invalid option");
         require(block.timestamp < prediction.endTime, "Prediction ended");
@@ -94,8 +88,9 @@ contract PredictionMarketTrading {
         uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
 
         // Calculate eth need to buy amount of tokens
-        uint256 ethNeeded =
-            priceInEth(initialTokenAmount, currentTokenReserve, prediction.ethReserve, _amountTokenToBuy);
+        uint256 ethNeeded = avgPriceInEth(
+            initialTokenAmount, currentTokenReserve, prediction.ethReserve, _amountTokenToBuy
+        ) * _amountTokenToBuy;
 
         require(msg.value == ethNeeded, "Must send right amount of ETH");
 
@@ -103,17 +98,29 @@ contract PredictionMarketTrading {
         prediction.lpReserve += msg.value;
 
         prediction.optionTokens[_optionId].transfer(msg.sender, _amountTokenToBuy);
-        (bool success,) = address(this).call{ value: _amountETHrequired }("");
-        require(success, "ETH transfer failed");
     }
 
-    // function swapTokensForEth(uint256 _predictionId, uint256 _optionId, uint256 _tokenAmount) external {
-    //     Prediction storage prediction = predictions[_predictionId];
-    //     require(_optionId < prediction.optionsCount, "Invalid option");
-    //     // can only be traded as long as the prediction is not resolved and the end time is not reached
-    //     require(block.timestamp < prediction.endTime, "Prediction ended");
-    //     require(prediction.winningOptionId == 0, "Prediction already resolved");
-    // }
+    function sellTokensForEth(uint256 _predictionId, uint256 _optionId, uint256 _tokenAmountToSell) external {
+        Prediction storage prediction = predictions[_predictionId];
+        require(_optionId < prediction.optionsCount, "Invalid option");
+        require(block.timestamp < prediction.endTime, "Prediction ended");
+        require(prediction.winningOptionId == 0, "Prediction already resolved");
+
+        uint256 initialTokenAmount = prediction.initialTokenAmount;
+        uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
+
+        uint256 ethToReceive = sellAvgPriceInEth(
+            initialTokenAmount, currentTokenReserve, prediction.ethReserve, _tokenAmountToSell
+        ) * _tokenAmountToSell;
+
+        prediction.tokenReserves[_optionId] += _tokenAmountToSell;
+        prediction.lpReserve -= ethToReceive;
+
+        prediction.optionTokens[_optionId].transferFrom(msg.sender, address(this), _tokenAmountToSell);
+
+        (bool success,) = msg.sender.call{ value: ethToReceive }("");
+        require(success, "ETH transfer failed");
+    }
 
     // function to report the winning option
     function report(uint256 _predictionId, uint256 _winningOption) external {
@@ -128,70 +135,83 @@ contract PredictionMarketTrading {
         prediction.isReported = true;
     }
 
-    // // Function for winners to claim their ETH
-    // function redeemWinningTokens(uint256 _predictionId, uint256 _amount) external {
-    //     Prediction storage prediction = predictions[_predictionId];
-    //     // Q: should be enough?
-    //     require(prediction.isReported, "Prediction not resolved yet");
+    /// TODO: would be proably nice to have some kind of burn mechanism for the tokens with no value left
+    // Function for winners to claim their ETH
+    function redeemWinningTokens(uint256 _predictionId, uint256 _amount) external {
+        Prediction storage prediction = predictions[_predictionId];
+        // Q: should be enough?
+        require(prediction.isReported, "Prediction not resolved yet");
+        require(_amount > 0, "Amount must be greater than 0");
+        // Check that prediction has been reported and get winning option ID
+        uint256 winningOptionId = prediction.winningOptionId;
+        PredictionOptionToken winningToken = prediction.optionTokens[winningOptionId];
 
-    //     uint256 winningOptionId = prediction.winningOptionId;
-    //     PredictionOptionToken winningToken = prediction.optionTokens[winningOptionId];
-    //     uint256 totalSupply = winningToken.totalSupply();
+        // Check caller has enough winning tokens
+        require(winningToken.balanceOf(msg.sender) >= _amount, "Insufficient winning tokens");
 
-    //     // Calculate the share of ETH to receive
-    //     uint256 ethToReceive = (_amount * prediction.ethReserve) / totalSupply;
+        // TODO: check if this is correct
+        uint256 totalSupply = winningToken.totalSupply();
 
-    //     // Update state
-    //     prediction.ethReserve -= ethToReceive;
-    //     prediction.tokenReserves[winningOptionId] -= _amount;
+        // Calculate the share of ETH to receive
+        uint256 ethToReceive = (_amount * prediction.ethReserve) / totalSupply;
 
-    //     // Transfer tokens from user to contract
-    //     require(winningToken.transferFrom(msg.sender, address(this), _amount), "Token transfer failed");
+        // Update state
+        prediction.ethReserve -= ethToReceive;
+        prediction.tokenReserves[winningOptionId] -= _amount;
 
-    //     // Transfer ETH to user
-    //     (bool success,) = msg.sender.call{ value: ethToReceive }("");
-    //     require(success, "ETH transfer failed");
-    // }
+        // Transfer tokens from user to contract
+        require(winningToken.transferFrom(msg.sender, address(this), _amount), "Token transfer failed");
 
-    // // function to get for a specific address the amount of eth he can get back if he wons
-    // function getRedemptionRate(uint256 _predictionId) external view returns (uint256) {
-    // }
+        // Transfer ETH to user
+        (bool success,) = msg.sender.call{ value: ethToReceive }("");
+        require(success, "ETH transfer failed");
+    }
+
+    // function to get for a specific address the amount of eth he can get back if he wons
+    function getRedemptionRate(uint256 _predictionId) external view returns (uint256) { }
 
     /**
      * DEX functions
      */
 
+    /// TODO: combine both functions
     // only for two options, returns how much a user needs to pay for one token a certain amount of token 1
-    function priceInEth(
+    function avgPriceInEth(
         uint256 _initialTokenAmount,
         uint256 _currentTokenReserve,
         uint256 _ethReserve,
         uint256 _tradingAmount
-    ) public view returns (uint256) {
+    ) public pure returns (uint256) {
         uint256 tokenRatio = _ethReserve / _initialTokenAmount;
-        console.log("tokenRatio", tokenRatio);
+        // console.log("tokenRatio", tokenRatio);
 
         uint256 numerator1 = ((1e18 - ((_currentTokenReserve * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
-        console.log("numerator1", numerator1);
+        // console.log("numerator1", numerator1);
 
-        uint256 numberator2 =
+        uint256 numerator2 =
             ((1e18 - (((_currentTokenReserve - _tradingAmount) * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
-        console.log("numberator2", numberator2);
-        return tokenRatio * (numerator1 + numberator2) / 2 / 1000;
+        // console.log("numerator2", numerator2);
+        return tokenRatio * (numerator1 + numerator2) / 2 / 1000;
     }
 
-    // for getting eth in
-    // function priceInToken(
-    //     uint256 _initialTokenAmount,
-    //     uint256 _currentTokenReserve,
-    //     uint256 _ethReserve,
-    //     uint256 _amountETH
-    // ) public view returns (uint256) {
-    //     // 2 * _currentTokenReserve - _initialTokenAmount
-    //     // _amountETH * _initialTokenAmount** / _ethReserve
-    //     return 2 * _currentTokenReserve - _initialTokenAmount
-    //         + _amountETH * _initialTokenAmount * _initialTokenAmount / _ethReserve;
-    // }
+    // - operation is different to function above
+    function sellAvgPriceInEth(
+        uint256 _initialTokenAmount,
+        uint256 _currentTokenReserve,
+        uint256 _ethReserve,
+        uint256 _tradingAmount
+    ) public pure returns (uint256) {
+        uint256 tokenRatio = _ethReserve / _initialTokenAmount;
+        // console.log("tokenRatio", tokenRatio);
+
+        uint256 numerator1 = ((1e18 - ((_currentTokenReserve * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
+        // console.log("numerator1", numerator1);
+
+        uint256 numerator2 =
+            ((1e18 - (((_currentTokenReserve + _tradingAmount) * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
+        // console.log("numerator2", numerator2);
+        return tokenRatio * (numerator1 + numerator2) / 2 / 1000;
+    }
 
     /// TODO: to implement
     // 1. add liquidity to LP pool
@@ -218,7 +238,7 @@ contract PredictionMarketTrading {
             prediction.liquidity[msg.sender] += msg.value;
         }
     }
-    // 2. remove liquidity
+    /// TODO: implement remove liquidity
 
     function removeLiquidity(uint256 _predictionId) external payable { }
 
@@ -262,5 +282,21 @@ contract PredictionMarketTrading {
 
     function getOptions(uint256 _predictionId, uint256 _optionId) external view returns (string memory) {
         return predictions[_predictionId].options[_optionId];
+    }
+
+    function getOptionsToken(uint256 _predictionId, uint256 _optionId) external view returns (PredictionOptionToken) {
+        return predictions[_predictionId].optionTokens[_optionId];
+    }
+
+    function getLpReserve(uint256 _predictionId) external view returns (uint256) {
+        return predictions[_predictionId].lpReserve;
+    }
+
+    function getInitialTokenAmount(uint256 _predictionId) external view returns (uint256) {
+        return predictions[_predictionId].initialTokenAmount;
+    }
+
+    function getInitialLiquidity(uint256 _predictionId) external view returns (uint256) {
+        return predictions[_predictionId].initialLiquidity;
     }
 }
