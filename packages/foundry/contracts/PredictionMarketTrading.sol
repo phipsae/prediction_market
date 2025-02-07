@@ -87,15 +87,26 @@ contract PredictionMarketTrading {
         uint256 initialTokenAmount = prediction.initialTokenAmount;
         uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
 
+        console.log("!!!!!!!!initialTokenAmount!!!!!!!", initialTokenAmount);
+        console.log("!!!!!!!!currentTokenReserve!!!!!!!", currentTokenReserve);
+        console.log("!!!!!!!!prediction.ethReserve!!!!!!!", prediction.ethReserve);
+        console.log("!!!!!!!!_amountTokenToBuy!!!!!!!", _amountTokenToBuy);
+
         // Calculate eth need to buy amount of tokens
-        uint256 ethNeeded = avgPriceInEth(
-            initialTokenAmount, currentTokenReserve, prediction.ethReserve, _amountTokenToBuy
-        ) * _amountTokenToBuy;
+        uint256 avgPrice =
+            avgPriceInEth(initialTokenAmount, currentTokenReserve, prediction.ethReserve, _amountTokenToBuy);
+
+        uint256 ethNeeded = avgPrice * _amountTokenToBuy / 1e18;
+
+        console.log("!!!!!!!!avgPrice!!!!!!!", avgPrice);
+        console.log("!!!!!!!!ethNeeded!!!!!!!", ethNeeded);
+        console.log("!!!!!!!!msg.value!!!!!!!", msg.value);
 
         require(msg.value == ethNeeded, "Must send right amount of ETH");
 
         prediction.tokenReserves[_optionId] -= _amountTokenToBuy;
         prediction.lpReserve += msg.value;
+        console.log("!!!!!!!!prediction.lpReserve!!!!!!!", prediction.lpReserve);
 
         prediction.optionTokens[_optionId].transfer(msg.sender, _amountTokenToBuy);
     }
@@ -174,24 +185,56 @@ contract PredictionMarketTrading {
      * DEX functions
      */
 
-    /// TODO: combine both functions
-    // only for two options, returns how much a user needs to pay for one token a certain amount of token 1
+    // /// TODO: combine both functions
+    // // only for two options, returns how much a user needs to pay for one token a certain amount of token 1
+    // function avgPriceInEth(
+    //     uint256 _initialTokenAmount,
+    //     uint256 _currentTokenReserve,
+    //     uint256 _ethReserve,
+    //     uint256 _tradingAmount
+    // ) public pure returns (uint256) {
+    //     // Maintain precision by scaling tokenRatio
+    //     uint256 tokenRatio = (_ethReserve * 1e18) / _initialTokenAmount;
+
+    //     // Properly scale to avoid integer truncation
+    //     uint256 numerator1 = ((1e18 - ((_currentTokenReserve * 1e18) / (_initialTokenAmount * 2))) * 1e18) * 1000;
+    //     uint256 numerator2 =
+    //         ((1e18 - (((_currentTokenReserve - _tradingAmount) * 1e18) / (_initialTokenAmount * 2))) * 1e18) * 1000;
+
+    //     console.log("!!!!!!!!tokenRatio!!!!!!!", tokenRatio);
+    //     console.log("!!!!!!!!numerator1!!!!!!!", numerator1);
+    //     console.log("!!!!!!!!numerator2!!!!!!!", numerator2);
+
+    //     uint256 result = (tokenRatio * (numerator1 + numerator2) / 2) / (1e18 * 1e18 * 1e18 * 1000);
+    //     console.log("!!!!!!!!result!!!!!!!", result);
+
+    //     return result;
+    // }
+
     function avgPriceInEth(
         uint256 _initialTokenAmount,
         uint256 _currentTokenReserve,
         uint256 _ethReserve,
         uint256 _tradingAmount
     ) public pure returns (uint256) {
-        uint256 tokenRatio = _ethReserve / _initialTokenAmount;
-        // console.log("tokenRatio", tokenRatio);
+        // First calculate the average of numerator1 and numerator2 to reduce the size
+        uint256 num1 = (1e18 - ((_currentTokenReserve * 1e18) / (_initialTokenAmount * 2)));
+        uint256 num2 = (1e18 - (((_currentTokenReserve - _tradingAmount) * 1e18) / (_initialTokenAmount * 2)));
 
-        uint256 numerator1 = ((1e18 - ((_currentTokenReserve * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
-        // console.log("numerator1", numerator1);
+        // Calculate average first to reduce number size
+        uint256 avgNumerator = (num1 + num2) / 2;
 
-        uint256 numerator2 =
-            ((1e18 - (((_currentTokenReserve - _tradingAmount) * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
-        // console.log("numerator2", numerator2);
-        return tokenRatio * (numerator1 + numerator2) / 2 / 1000;
+        // Then multiply by tokenRatio
+        uint256 tokenRatio = (_ethReserve * 1e18 * 1e18) / _initialTokenAmount;
+
+        uint256 result = (tokenRatio * avgNumerator) / 1e18 / 1e18;
+
+        console.log("!!!!!!!!tokenRatio!!!!!!!", tokenRatio);
+        console.log("!!!!!!!!avgNumerator!!!!!!!", avgNumerator);
+        console.log("!!!!!!!!resultHERE!!!!!!!", result);
+
+        // Final calculation with reduced scaling factors
+        return result;
     }
 
     // - operation is different to function above
@@ -201,7 +244,7 @@ contract PredictionMarketTrading {
         uint256 _ethReserve,
         uint256 _tradingAmount
     ) public pure returns (uint256) {
-        uint256 tokenRatio = _ethReserve / _initialTokenAmount;
+        uint256 tokenRatio = (_ethReserve * 1e18) / _initialTokenAmount;
         // console.log("tokenRatio", tokenRatio);
 
         uint256 numerator1 = ((1e18 - ((_currentTokenReserve * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
@@ -210,7 +253,7 @@ contract PredictionMarketTrading {
         uint256 numerator2 =
             ((1e18 - (((_currentTokenReserve + _tradingAmount) * 1e18) / _initialTokenAmount / 2)) * 1000) / 1e18;
         // console.log("numerator2", numerator2);
-        return tokenRatio * (numerator1 + numerator2) / 2 / 1000;
+        return tokenRatio * (numerator1 + numerator2) / 2 / 1000 / 1e18;
     }
 
     /// TODO: to implement
@@ -270,6 +313,10 @@ contract PredictionMarketTrading {
 
     function getPredictionEthReserve(uint256 _predictionId) external view returns (uint256) {
         return predictions[_predictionId].ethReserve;
+    }
+
+    function getPredictionLpReserve(uint256 _predictionId) external view returns (uint256) {
+        return predictions[_predictionId].lpReserve;
     }
 
     function getTokenReserve(uint256 _predictionId, uint256 _optionId) external view returns (uint256) {

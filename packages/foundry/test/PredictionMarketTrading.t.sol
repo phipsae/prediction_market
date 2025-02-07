@@ -25,8 +25,8 @@ contract PredictionMarketTradingTest is Test {
         options[0] = "Yes";
         options[1] = "No";
         vm.prank(oracle);
-        predictionMarket.createPrediction{ value: 10 ether }(
-            "Will ETH reach $10k?", options, block.timestamp + 100, 10 ether, 1000
+        predictionMarket.createPrediction{ value: 1 ether }(
+            "Will ETH reach $10k?", options, block.timestamp + 100, 1 ether, 1000 ether
         );
         _;
     }
@@ -99,7 +99,7 @@ contract PredictionMarketTradingTest is Test {
 
     function testBuyTokenWithETH() public withPrediction {
         PredictionOptionToken option1Tokenaddress = predictionMarket.getOptionsToken(0, 0);
-        uint256 tradingAmount = 100;
+        uint256 tradingAmount = 100 ether;
         uint256 lpreserveBefore = predictionMarket.getLpReserve(0);
         uint256 option1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
         uint256 ethReserve = predictionMarket.getPredictionEthReserve(0);
@@ -107,7 +107,7 @@ contract PredictionMarketTradingTest is Test {
         uint256 token1TokenReserve = predictionMarket.getTokenReserve(0, 0);
         uint256 ethNeeded = predictionMarket.avgPriceInEth(
             initialTokenAmount, token1TokenReserve, ethReserve, tradingAmount
-        ) * tradingAmount;
+        ) * tradingAmount / 1e18;
         console.log("eth needed", ethNeeded);
         console.log("gambler1 eth balance", address(gambler1).balance);
         vm.prank(gambler1);

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "./DeployHelpers.s.sol";
-import "../contracts/PredictionMarketSimple.sol";
+import { PredictionMarketTrading } from "../contracts/PredictionMarketTrading.sol";
 
 /**
  * @notice Deploy script for YourContract contract
@@ -44,6 +44,19 @@ contract DeployPredictionMarket is ScaffoldETHDeploy {
         // vm.startBroadcast(gambler3);
         // predictionMarket.bet{ value: 1 ether }(PredictionMarket.Side.Kamala);
         // vm.stopBroadcast();
-        new PredictionMarketSimple(deployer);
+
+        PredictionMarketTrading predictionMarket = new PredictionMarketTrading(deployer);
+        string memory question = "Will BTC reach $200k by end of 2025?";
+        uint256 resolutionTime = block.timestamp + 365 days; // Resolution in 1 year
+        uint256 initialLiquidity = 1 ether;
+
+        string[] memory options = new string[](2);
+        options[0] = "Yes";
+        options[1] = "No";
+        uint256 initialTokenAmount = 1000 ether; // Initial token amount for liquidity
+
+        predictionMarket.createPrediction{ value: initialLiquidity }(
+            question, options, resolutionTime, initialLiquidity, initialTokenAmount
+        );
     }
 }
