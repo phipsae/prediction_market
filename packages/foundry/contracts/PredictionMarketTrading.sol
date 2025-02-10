@@ -26,7 +26,7 @@ contract PredictionMarketTrading {
     error PredictionMarketTrading__InvalidWinningOption();
     error PredictionMarketTrading__InsufficientWinningTokens();
     error PredictionMarketTrading__NoLiquidityToRemove();
-
+    error PredictionMarketTrading__InsufficientLiquidity();
     //////////////////////////
     /// State Variables //////
     //////////////////////////
@@ -319,6 +319,7 @@ contract PredictionMarketTrading {
 
         // increase the gambling pot because more tokens are added
         prediction.ethReserve += msg.value;
+        prediction.liquidity[msg.sender] += msg.value;
 
         // the amount of all created tokens in the pool, to calcualte the percentage of each token
         uint256 totalTokenReserves = 0;
@@ -333,12 +334,15 @@ contract PredictionMarketTrading {
             prediction.tokenReserves[i] += tokensToMint;
             optionToken.mint(address(this), tokensToMint);
             // track added liquidty to have access to rewards and rest of tokens when prediciton ends
-            prediction.liquidity[msg.sender] += msg.value;
         }
     }
-    /// TODO: implement remove liquidity
 
-    function removeLiquidity(uint256 _predictionId) external {
+    /**
+     * @notice Remove liquidity from the prediction market and burn corresponding tokens, if you remove liquidity before prediction ends you got no share of lpReserve
+     * @param _predictionId ID of the prediction market
+     * @param _ethToWithdraw Amount of ETH to withdraw from liquidity pool
+     */
+    function removeLiquidity(uint256 _predictionId, uint256 _ethToWithdraw) external {
         Prediction storage prediction = s_predictions[_predictionId];
         if (prediction.isReported) {
             revert PredictionMarketTrading__PredictionAlreadyResolved();
@@ -348,19 +352,22 @@ contract PredictionMarketTrading {
         if (liquidity == 0) {
             revert PredictionMarketTrading__NoLiquidityToRemove();
         }
-
-        uint256 totalTokenReserves = 0;
-        for (uint256 i = 0; i < OPTIONS_COUNT; i++) {
-            totalTokenReserves += prediction.tokenReserves[i];
+        if (_ethToWithdraw > liquidity) {
+            revert PredictionMarketTrading__InsufficientLiquidity();
         }
+
+        uint256 ethReserveShare = _ethToWithdraw * PRECISION / prediction.ethReserve;
+        prediction.ethReserve -= _ethToWithdraw;
+        prediction.liquidity[msg.sender] -= _ethToWithdraw;
 
         for (uint256 i = 0; i < OPTIONS_COUNT; i++) {
             PredictionOptionToken optionToken = prediction.optionTokens[i];
-            uint256 tokensToBurn = (liquidity * prediction.tokenReserves[i]) / totalTokenReserves;
+            uint256 tokensToBurn = (ethReserveShare * prediction.tokenReserves[i]) / PRECISION;
             optionToken.burn(address(this), tokensToBurn);
+            prediction.tokenReserves[i] -= tokensToBurn;
         }
 
-        (bool success,) = msg.sender.call{ value: liquidity }("");
+        (bool success,) = msg.sender.call{ value: _ethToWithdraw }("");
         require(success, "ETH transfer failed");
     }
 
@@ -426,5 +433,9 @@ contract PredictionMarketTrading {
 
     function getInitialLiquidity(uint256 _predictionId) external view returns (uint256) {
         return s_predictions[_predictionId].initialLiquidity;
+    }
+
+    function getLiquidity(uint256 _predictionId, address _address) external view returns (uint256) {
+        return s_predictions[_predictionId].liquidity[_address];
     }
 }

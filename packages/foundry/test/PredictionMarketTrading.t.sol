@@ -58,6 +58,12 @@ contract PredictionMarketTradingTest is Test {
         _;
     }
 
+    modifier withAddedLiquidity() {
+        vm.prank(gambler1);
+        predictionMarket.addLiquidity{ value: 1 ether }(0);
+        _;
+    }
+
     function testCreatePrediction() public withPrediction {
         PredictionOptionToken optionToken1 = predictionMarket.getPredictionOptionToken(0, 0);
         PredictionOptionToken optionToken2 = predictionMarket.getPredictionOptionToken(0, 1);
@@ -83,6 +89,30 @@ contract PredictionMarketTradingTest is Test {
         console.log(predictionMarket.getPredictionEthReserve(0));
         console.log(predictionMarket.getTokenReserve(0, 0));
         console.log(predictionMarket.getTokenReserve(0, 1));
+    }
+
+    function testRemoveLiquidity() public withPrediction withFirstPurchase withAddedLiquidity {
+        uint256 ethReserveBefore = predictionMarket.getPredictionEthReserve(0);
+        console.log("ethReserveBefore", ethReserveBefore);
+        uint256 oracleLiquidity = predictionMarket.getLiquidity(0, oracle);
+        console.log("liquidityOracle", oracleLiquidity);
+        uint256 gambler1Liquidity = predictionMarket.getLiquidity(0, gambler1);
+        console.log("liquidityGambler1", gambler1Liquidity);
+
+        uint256 tokenBalance1Before = predictionMarket.getTokenReserve(0, 0);
+        uint256 tokenBalance2Before = predictionMarket.getTokenReserve(0, 1);
+        console.log("tokenBalance1Before", tokenBalance1Before);
+        console.log("tokenBalance2Before", tokenBalance2Before);
+
+        uint256 ethToWithdraw = 1 ether;
+
+        vm.prank(gambler1);
+        predictionMarket.removeLiquidity(0, ethToWithdraw);
+
+        console.log("ethReserveAfter", predictionMarket.getPredictionEthReserve(0));
+        console.log("liquidityGambler1After", predictionMarket.getLiquidity(0, gambler1));
+        console.log("tokenBalance1After", predictionMarket.getTokenReserve(0, 0));
+        console.log("tokenBalance2After", predictionMarket.getTokenReserve(0, 1));
     }
 
     function testPriceInEth() public withPrediction {
