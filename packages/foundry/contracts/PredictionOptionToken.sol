@@ -16,4 +16,9 @@ contract PredictionOptionToken is ERC20 {
         require(msg.sender == predictionMarket, "Only prediction market can mint");
         _mint(to, amount);
     }
+
+    function burn(address from, uint256 amount) external {
+        require(msg.sender == predictionMarket, "Only prediction market can burn");
+        _burn(from, amount);
+    }
 }

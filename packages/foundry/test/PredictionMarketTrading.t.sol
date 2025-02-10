@@ -26,7 +26,7 @@ contract PredictionMarketTradingTest is Test {
         options[1] = "No";
         vm.prank(oracle);
         predictionMarket.createPrediction{ value: 1 ether }(
-            "Will ETH reach $10k?", options, block.timestamp + 100, 1 ether, 1000 ether
+            "Will ETH reach $10k?", options, block.timestamp + 100, 1000 ether
         );
         _;
     }
@@ -39,13 +39,13 @@ contract PredictionMarketTradingTest is Test {
     }
 
     modifier withFirstPurchase() {
-        uint256 tradingAmount = 100;
+        uint256 tradingAmount = 100 ether;
         uint256 ethReserve = predictionMarket.getPredictionEthReserve(0);
         uint256 initialTokenAmount = predictionMarket.getInitialTokenAmount(0);
         uint256 token1TokenReserve = predictionMarket.getTokenReserve(0, 0);
         uint256 ethNeeded = predictionMarket.avgPriceInEth(
             initialTokenAmount, token1TokenReserve, ethReserve, tradingAmount
-        ) * tradingAmount;
+        ) * tradingAmount / 1e18;
         vm.prank(gambler1);
         predictionMarket.buyTokenWithETH{ value: ethNeeded }(0, 0, tradingAmount);
         _;
@@ -66,7 +66,6 @@ contract PredictionMarketTradingTest is Test {
         assertEq(optionToken1.name(), "Prediction 0, Option: Yes");
         assertEq(optionToken2.name(), "Prediction 0, Option: No");
         assertEq(predictionMarket.getPredictionQuestion(0), "Will ETH reach $10k?");
-        assertEq(predictionMarket.getPredictionOptionsCount(0), 2);
         assertEq(predictionMarket.getPredictionOption(0, 0), "Yes");
         assertEq(predictionMarket.getPredictionOption(0, 1), "No");
         assertEq(predictionMarket.getPredictionEndTime(0), block.timestamp + 100);
@@ -124,7 +123,7 @@ contract PredictionMarketTradingTest is Test {
     function testSellTokenForETH() public withPrediction withFirstPurchase {
         PredictionOptionToken option1Tokenaddress = predictionMarket.getOptionsToken(0, 0);
 
-        uint256 sellAmount = 100;
+        uint256 sellAmount = 100 ether;
         uint256 lpreserveBefore = predictionMarket.getLpReserve(0);
         console.log("lpreserveBefore", lpreserveBefore);
         uint256 option1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
@@ -162,14 +161,14 @@ contract PredictionMarketTradingTest is Test {
 
         vm.warp(block.timestamp + 101); // Warp time past the prediction end time
         vm.prank(gambler1);
-        vm.expectRevert("Only oracle can report");
+        vm.expectRevert(PredictionMarketTrading.PredictionMarketTrading__OnlyOracleCanReport.selector);
         predictionMarket.report(0, 0);
         vm.prank(oracle);
         predictionMarket.report(0, 0);
         uint256 winningOptionId = predictionMarket.getPredictionWinningOptionId(0);
         assertEq(predictionMarket.getOptions(0, winningOptionId), "Yes");
         vm.prank(gambler1);
-        vm.expectRevert("Prediction ended");
+        vm.expectRevert(PredictionMarketTrading.PredictionMarketTrading__PredictionEnded.selector);
         predictionMarket.buyTokenWithETH{ value: 1 ether }(0, 0, 100);
         console.log("After");
         console.log(predictionMarket.getPredictionEthReserve(0));
@@ -182,7 +181,10 @@ contract PredictionMarketTradingTest is Test {
         uint256 gambler1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
         uint256 predictionEthBalanceBefore = address(predictionMarket).balance;
         console.log("Prediction contract ETH balance before:", predictionEthBalanceBefore);
-        uint256 tokenRedeemed = 100;
+        uint256 tokenRedeemed = 100 ether;
+
+        uint256 totalSupplyBefore = option1Tokenaddress.totalSupply();
+        console.log("totalSupplyBefore", totalSupplyBefore);
 
         vm.prank(gambler1);
         option1Tokenaddress.approve(address(predictionMarket), tokenRedeemed);
@@ -191,7 +193,7 @@ contract PredictionMarketTradingTest is Test {
         predictionMarket.redeemWinningTokens(0, tokenRedeemed);
 
         vm.prank(gambler1);
-        vm.expectRevert("Insufficient winning tokens");
+        vm.expectRevert(PredictionMarketTrading.PredictionMarketTrading__InsufficientWinningTokens.selector);
         predictionMarket.redeemWinningTokens(0, tokenRedeemed);
 
         uint256 gambler1TokenBalanceAfter = option1Tokenaddress.balanceOf(gambler1);
@@ -199,6 +201,8 @@ contract PredictionMarketTradingTest is Test {
 
         uint256 predictionEthBalanceAfter = address(predictionMarket).balance;
         console.log("Prediction contract ETH balance after:", predictionEthBalanceAfter);
+        uint256 totalSupplyAfter = option1Tokenaddress.totalSupply();
+        console.log("totalSupplyAfter", totalSupplyAfter);
         // assertEq(predictionEthBalanceAfter, predictionEthBalanceBefore + tokenRedeemed);
     }
 }

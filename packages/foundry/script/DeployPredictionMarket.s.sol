@@ -56,7 +56,7 @@ contract DeployPredictionMarket is ScaffoldETHDeploy {
         uint256 initialTokenAmount = 1000 ether; // Initial token amount for liquidity
 
         predictionMarket.createPrediction{ value: initialLiquidity }(
-            question, options, resolutionTime, initialLiquidity, initialTokenAmount
+            question, options, resolutionTime, initialTokenAmount
         );
     }
 }
