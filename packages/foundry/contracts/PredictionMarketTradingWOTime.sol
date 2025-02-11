@@ -67,7 +67,7 @@ contract PredictionMarketTradingWOTime {
         if (_optionId >= OPTIONS_COUNT) {
             revert PredictionMarketTrading__InvalidOption();
         }
-        if (prediction.winningOptionId != 0) {
+        if (prediction.isReported) {
             revert PredictionMarketTrading__PredictionAlreadyResolved();
         }
         _;
@@ -418,5 +418,13 @@ contract PredictionMarketTradingWOTime {
 
     function getLiquidity(uint256 _predictionId, address _address) external view returns (uint256) {
         return s_predictions[_predictionId].liquidity[_address];
+    }
+
+    function getReported(uint256 _predictionId) external view returns (bool) {
+        return s_predictions[_predictionId].isReported;
+    }
+
+    function getWinningOptionId(uint256 _predictionId) external view returns (uint256) {
+        return s_predictions[_predictionId].winningOptionId;
     }
 }

@@ -1,0 +1,52 @@
+"use client";
+
+import { useState } from "react";
+import { parseEther } from "viem";
+import { useWriteContract } from "wagmi";
+
+const erc20Abi = [
+  {
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
+
+export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: string; spenderAddress: string }) {
+  const [amount, setAmount] = useState<string>("");
+
+  const { writeContractAsync: approveToken } = useWriteContract();
+
+  const handleApprove = async () => {
+    try {
+      await approveToken({
+        abi: erc20Abi,
+        address: tokenAddress,
+        functionName: "approve",
+        args: [spenderAddress, parseEther(amount || "0")],
+      });
+    } catch (error) {
+      console.error("Error approving tokens:", error);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <input
+        type="number"
+        placeholder="Amount to approve"
+        className="input input-bordered input-sm w-full border-red-200 focus:border-red-500"
+        value={amount}
+        onChange={e => setAmount(e.target.value)}
+      />
+      <button className="btn btn-sm w-full bg-red-600 hover:bg-red-700 text-white" onClick={handleApprove}>
+        Approve Tokens
+      </button>
+    </div>
+  );
+}

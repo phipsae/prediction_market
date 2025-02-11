@@ -62,9 +62,11 @@ contract DeployPredictionMarket is ScaffoldETHDeploy {
         // );
 
         /// PredictionWithoutTime
+        // Fund deployer with initial ETH
+        vm.deal(deployer, 100 ether);
         PredictionMarketTradingWOTime predictionMarketWOTime = new PredictionMarketTradingWOTime(deployer);
         string memory question = "Will ETH reach $20k by end of 2025?";
-        uint256 initialLiquidity = 1 ether;
+        uint256 initialLiquidity = 0.1 ether;
 
         string[] memory options = new string[](2);
         options[0] = "Yes";
