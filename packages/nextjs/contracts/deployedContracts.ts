@@ -673,7 +673,7 @@ const deployedContracts = {
       deploymentScript: "Deploy.s.sol",
     },
     PredictionMarketTradingWOTime: {
-      address: "0xc31898f86663e95ab3018164cc3211132af580a7",
+      address: "0x5a64915a595497ac875c42b46ca422e2e0fe94cb",
       abi: [
         {
           type: "constructor",
@@ -1320,7 +1320,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1739269827.json",
+      deploymentFile: "run-1739271396.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

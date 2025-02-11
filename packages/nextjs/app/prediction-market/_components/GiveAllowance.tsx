@@ -20,6 +20,9 @@ const erc20Abi = [
 export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: string; spenderAddress: string }) {
   const [amount, setAmount] = useState<string>("");
 
+  console.log("tokenAddress From GiveAllowance", tokenAddress);
+  console.log("spenderAddress From GiveAllowance", spenderAddress);
+
   const { writeContractAsync: approveToken } = useWriteContract();
 
   const handleApprove = async () => {

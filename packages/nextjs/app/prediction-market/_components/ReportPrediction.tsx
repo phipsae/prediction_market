@@ -43,8 +43,8 @@ export function ReportPrediction() {
           onChange={e => setSelectedOutcome(Number(e.target.value))}
           disabled={!isOracle}
         >
-          <option value={1}>Yes</option>
-          <option value={2}>No</option>
+          <option value={0}>Yes</option>
+          <option value={1}>No</option>
         </select>
         <button className="btn btn-primary" onClick={handleReport} disabled={!isOracle}>
           Report Outcome

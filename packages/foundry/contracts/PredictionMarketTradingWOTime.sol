@@ -203,18 +203,18 @@ contract PredictionMarketTradingWOTime {
     // Function for winners to claim their ETH
     function redeemWinningTokens(uint256 _predictionId, uint256 _amount) external {
         Prediction storage prediction = s_predictions[_predictionId];
-        // Q: should be enough?
-        if (!prediction.isReported) {
-            revert PredictionMarketTrading__PredictionNotResolved();
-        }
+
+        // if (!prediction.isReported) {
+        //     revert PredictionMarketTrading__PredictionNotResolved();
+        // }
         // Check that prediction has been reported and get winning option ID
         uint256 winningOptionId = prediction.winningOptionId;
         PredictionOptionToken winningToken = prediction.optionTokens[winningOptionId];
 
         // Check caller has enough winning tokens
-        if (winningToken.balanceOf(msg.sender) < _amount) {
-            revert PredictionMarketTrading__InsufficientWinningTokens();
-        }
+        // if (winningToken.balanceOf(msg.sender) < _amount) {
+        //     revert PredictionMarketTrading__InsufficientWinningTokens();
+        // }
 
         // TODO: check if this is correct
         uint256 totalSupply = winningToken.totalSupply();
