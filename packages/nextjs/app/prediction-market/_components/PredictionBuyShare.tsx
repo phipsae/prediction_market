@@ -10,29 +10,29 @@ export function PredictionBuyShare() {
 
   //  buy token 1 of prediction 0
   const { writeContractAsync: writeYourContractAsync } = useScaffoldWriteContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
   });
 
   const { data: initialTokenAmount } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getInitialTokenAmount",
     args: [BigInt(0)],
   });
 
   const { data: token1Reserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getTokenReserve",
     args: [BigInt(0), BigInt(0)],
   });
 
   const { data: ethReserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getPredictionEthReserve",
     args: [BigInt(0)],
   });
 
   const { data: avgPriceInEth } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "avgPriceInEth",
     args: [
       initialTokenAmount ?? BigInt(0),

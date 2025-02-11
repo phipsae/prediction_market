@@ -5,45 +5,45 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionMarketInfo() {
   const { data: predictionQuestion } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getPredictionQuestion",
     args: [BigInt(0)],
   });
 
   const { data: ethReserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getPredictionEthReserve",
     args: [BigInt(0)],
   });
 
   const { data: lpReserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getPredictionLpReserve",
     args: [BigInt(0)],
   });
 
   ///   Token 1
   const { data: predictionOutcome1 } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getOptions",
     args: [BigInt(0), BigInt(0)],
   });
 
   const { data: token1Reserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getTokenReserve",
     args: [BigInt(0), BigInt(0)],
   });
 
   ///   Token 2
   const { data: predictionOutcome2 } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getOptions",
     args: [BigInt(0), BigInt(1)],
   });
 
   const { data: token2Reserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTrading",
+    contractName: "PredictionMarketTradingWOTime",
     functionName: "getTokenReserve",
     args: [BigInt(0), BigInt(1)],
   });

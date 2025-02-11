@@ -7,7 +7,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { console } from "forge-std/console.sol";
 
 // TODO: ownable, reentrancy guard, fallback, receive
-contract PredictionMarketTrading {
+contract PredictionMarketTradingWOTime {
     using Strings for uint256;
 
     /////////////////
@@ -16,10 +16,8 @@ contract PredictionMarketTrading {
 
     error PredictionMarketTrading__OnlyOracleCanCreatePredictions();
     error PredictionMarketTrading__NeedExactlyTwoOptions();
-    error PredictionMarketTrading__EndTimeMustBeInTheFuture();
     error PredictionMarketTrading__MustProvideETHForInitialLiquidity();
     error PredictionMarketTrading__InvalidOption();
-    error PredictionMarketTrading__PredictionEnded();
     error PredictionMarketTrading__PredictionAlreadyResolved();
     error PredictionMarketTrading__OnlyOracleCanReport();
     error PredictionMarketTrading__PredictionNotResolved();
@@ -34,7 +32,6 @@ contract PredictionMarketTrading {
 
     struct Prediction {
         string question;
-        uint256 endTime;
         mapping(uint256 => string) options;
         mapping(uint256 => PredictionOptionToken) optionTokens; // tracks token addresses
         mapping(uint256 => uint256) tokenReserves; // amount of tokens in the pool
@@ -70,9 +67,6 @@ contract PredictionMarketTrading {
         if (_optionId >= OPTIONS_COUNT) {
             revert PredictionMarketTrading__InvalidOption();
         }
-        if (block.timestamp >= prediction.endTime) {
-            revert PredictionMarketTrading__PredictionEnded();
-        }
         if (prediction.winningOptionId != 0) {
             revert PredictionMarketTrading__PredictionAlreadyResolved();
         }
@@ -91,23 +85,17 @@ contract PredictionMarketTrading {
      * @notice Create a new prediction market with initial liquidity
      * @param _question The question being predicted
      * @param _options Array of possible outcomes (must be exactly 2)
-     * @param _endTime Timestamp when prediction period ends
      * @param _initialTokenAmount Amount of tokens to mint per option
      */
-    function createPrediction(
-        string calldata _question,
-        string[] calldata _options,
-        uint256 _endTime,
-        uint256 _initialTokenAmount
-    ) external payable {
+    function createPrediction(string calldata _question, string[] calldata _options, uint256 _initialTokenAmount)
+        external
+        payable
+    {
         if (msg.sender != s_oracle) {
             revert PredictionMarketTrading__OnlyOracleCanCreatePredictions();
         }
         if (_options.length != OPTIONS_COUNT) {
             revert PredictionMarketTrading__NeedExactlyTwoOptions();
-        }
-        if (_endTime <= block.timestamp) {
-            revert PredictionMarketTrading__EndTimeMustBeInTheFuture();
         }
         if (msg.value <= 0) {
             revert PredictionMarketTrading__MustProvideETHForInitialLiquidity();
@@ -115,7 +103,6 @@ contract PredictionMarketTrading {
 
         Prediction storage prediction = s_predictions[s_nextPredictionId];
         prediction.question = _question;
-        prediction.endTime = _endTime;
         prediction.ethReserve = msg.value;
         prediction.liquidity[msg.sender] += msg.value;
         prediction.initialTokenAmount = _initialTokenAmount;
@@ -204,9 +191,6 @@ contract PredictionMarketTrading {
             revert PredictionMarketTrading__OnlyOracleCanReport();
         }
         Prediction storage prediction = s_predictions[_predictionId];
-        if (block.timestamp < prediction.endTime) {
-            revert PredictionMarketTrading__PredictionNotResolved();
-        }
         if (_winningOption >= OPTIONS_COUNT) {
             revert PredictionMarketTrading__InvalidWinningOption();
         }
@@ -394,10 +378,6 @@ contract PredictionMarketTrading {
         returns (PredictionOptionToken)
     {
         return s_predictions[_predictionId].optionTokens[_optionId];
-    }
-
-    function getPredictionEndTime(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].endTime;
     }
 
     function getPredictionEthReserve(uint256 _predictionId) external view returns (uint256) {

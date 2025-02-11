@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "./DeployHelpers.s.sol";
 import { PredictionMarketTrading } from "../contracts/PredictionMarketTrading.sol";
-
+import { PredictionMarketTradingWOTime } from "../contracts/PredictionMarketTradingWOTime.sol";
 /**
  * @notice Deploy script for YourContract contract
  * @dev Inherits ScaffoldETHDeploy which:
@@ -14,6 +14,7 @@ import { PredictionMarketTrading } from "../contracts/PredictionMarketTrading.so
  * yarn deploy --file DeployYourContract.s.sol  # local anvil chain
  * yarn deploy --file DeployYourContract.s.sol --network optimism # live network (requires keystore)
  */
+
 contract DeployPredictionMarket is ScaffoldETHDeploy {
     /**
      * @dev Deployer setup based on `ETH_KEYSTORE_ACCOUNT` in `.env`:
@@ -45,18 +46,31 @@ contract DeployPredictionMarket is ScaffoldETHDeploy {
         // predictionMarket.bet{ value: 1 ether }(PredictionMarket.Side.Kamala);
         // vm.stopBroadcast();
 
-        PredictionMarketTrading predictionMarket = new PredictionMarketTrading(deployer);
-        string memory question = "Will BTC reach $200k by end of 2025?";
-        uint256 resolutionTime = block.timestamp + 365 days; // Resolution in 1 year
+        /// PredictionWithTime
+        // PredictionMarketTrading predictionMarket = new PredictionMarketTrading(deployer);
+        // string memory question = "Will BTC reach $200k by end of 2025?";
+        // uint256 resolutionTime = block.timestamp + 365 days; // Resolution in 1 year
+        // uint256 initialLiquidity = 1 ether;
+
+        // string[] memory options = new string[](2);
+        // options[0] = "Yes";
+        // options[1] = "No";
+        // uint256 initialTokenAmount = 1000 ether; // Initial token amount for liquidity
+
+        // predictionMarket.createPrediction{ value: initialLiquidity }(
+        //     question, options, resolutionTime, initialTokenAmount
+        // );
+
+        /// PredictionWithoutTime
+        PredictionMarketTradingWOTime predictionMarketWOTime = new PredictionMarketTradingWOTime(deployer);
+        string memory question = "Will ETH reach $20k by end of 2025?";
         uint256 initialLiquidity = 1 ether;
 
         string[] memory options = new string[](2);
         options[0] = "Yes";
         options[1] = "No";
-        uint256 initialTokenAmount = 1000 ether; // Initial token amount for liquidity
+        uint256 initialTokenAmount = 1000 ether;
 
-        predictionMarket.createPrediction{ value: initialLiquidity }(
-            question, options, resolutionTime, initialTokenAmount
-        );
+        predictionMarketWOTime.createPrediction{ value: initialLiquidity }(question, options, initialTokenAmount);
     }
 }
