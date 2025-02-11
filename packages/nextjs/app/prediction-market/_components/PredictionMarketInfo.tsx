@@ -1,5 +1,6 @@
 "use client";
 
+import { ReportPrediction } from "./ReportPrediction";
 import { formatEther } from "viem";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
@@ -54,6 +55,12 @@ export function PredictionMarketInfo() {
     args: [BigInt(0)],
   });
 
+  const { data: winningOptionId } = useScaffoldReadContract({
+    contractName: "PredictionMarketTradingWOTime",
+    functionName: "getWinningOptionId",
+    args: [BigInt(0)],
+  });
+
   const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
     const option1Chance =
       1 -
@@ -76,14 +83,33 @@ export function PredictionMarketInfo() {
           <div className="bg-base-200 p-4 rounded-lg">
             <h3 className="text-lg font-semibold mb-2">Probability</h3>
             <div
-              className="radial-progress text-primary"
+              className={`radial-progress ${
+                reported
+                  ? winningOptionId === BigInt(0)
+                    ? "text-success"
+                    : "text-error"
+                  : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) > 0.5
+                    ? "text-success"
+                    : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) === 0.5
+                      ? "text-neutral"
+                      : "text-error"
+              }`}
               style={
                 {
-                  "--value": calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100,
+                  "--value": reported
+                    ? winningOptionId === BigInt(0)
+                      ? 100
+                      : 0
+                    : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100,
                 } as any
               }
             >
-              {(calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2)}%
+              {reported
+                ? winningOptionId === BigInt(0)
+                  ? "100.00%"
+                  : "0.00%"
+                : (calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
+                  "%"}
             </div>
           </div>
 
@@ -128,6 +154,7 @@ export function PredictionMarketInfo() {
             </div>
           </div>
         </div>
+        <ReportPrediction />
       </div>
     </div>
   );

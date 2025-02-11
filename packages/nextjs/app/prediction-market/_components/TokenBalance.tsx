@@ -27,8 +27,12 @@ export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; o
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
-      <h3 className="text-lg font-medium mb-2">Token Balance of {option}</h3>
-      <p className="text-gray-700">Balance: {balance ? formatEther(balance) : "0"} tokens</p>
+      <div className="flex flex-row items-center gap-2">
+        <h3 className="text-lg text-center font-medium">
+          Token Balance of {option}:{" "}
+          <span className="text-gray-700">{balance ? formatEther(balance) : "0"} tokens</span>{" "}
+        </h3>
+      </div>
     </div>
   );
 }

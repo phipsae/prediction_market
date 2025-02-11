@@ -43,11 +43,11 @@ export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: 
       <input
         type="number"
         placeholder="Amount to approve"
-        className="input input-bordered input-sm w-full border-red-200 focus:border-red-500"
+        className="input input-bordered input-sm w-full border-gray-300 focus:border-gray-500"
         value={amount}
         onChange={e => setAmount(e.target.value)}
       />
-      <button className="btn btn-sm w-full bg-red-600 hover:bg-red-700 text-white" onClick={handleApprove}>
+      <button className="btn btn-sm w-full bg-gray-600 hover:bg-gray-700 text-white" onClick={handleApprove}>
         Approve Tokens
       </button>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GiveAllowance } from "./GiveAllowance";
+import { TokenBalance } from "./TokenBalance";
 import { parseEther } from "viem";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
@@ -18,11 +19,23 @@ export function Redeem() {
     args: [BigInt(0)],
   });
 
+  const { data: isReported } = useScaffoldReadContract({
+    contractName: "PredictionMarketTradingWOTime",
+    functionName: "getReported",
+    args: [BigInt(0)],
+  });
+
   console.log("winningOptionId", winningOptionId);
 
   const { data: getOptionsToken } = useScaffoldReadContract({
     contractName: "PredictionMarketTradingWOTime",
     functionName: "getOptionsToken",
+    args: [BigInt(0), BigInt(winningOptionId ?? 0)],
+  });
+
+  const { data: winningOption } = useScaffoldReadContract({
+    contractName: "PredictionMarketTradingWOTime",
+    functionName: "getOptions",
     args: [BigInt(0), BigInt(winningOptionId ?? 0)],
   });
 
@@ -48,9 +61,13 @@ export function Redeem() {
   return (
     <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
+      {isReported && tokenAddress && winningOptionId !== undefined && winningOption && (
+        <TokenBalance tokenAddress={tokenAddress} option={winningOption} />
+      )}
       {tokenAddress && contractAddress && (
         <GiveAllowance tokenAddress={tokenAddress} spenderAddress={contractAddress} />
       )}
+
       <div className="flex gap-4">
         <input
           type="number"
