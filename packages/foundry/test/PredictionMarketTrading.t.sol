@@ -43,9 +43,8 @@ contract PredictionMarketTradingTest is Test {
         uint256 ethReserve = predictionMarket.getPredictionEthReserve(0);
         uint256 initialTokenAmount = predictionMarket.getInitialTokenAmount(0);
         uint256 token1TokenReserve = predictionMarket.getTokenReserve(0, 0);
-        uint256 ethNeeded = predictionMarket.avgPriceInEth(
-            initialTokenAmount, token1TokenReserve, ethReserve, tradingAmount
-        ) * tradingAmount / 1e18;
+        uint256 ethNeeded = predictionMarket.avgPriceInEth(0, initialTokenAmount, token1TokenReserve, tradingAmount)
+            * tradingAmount / 1e18;
         vm.prank(gambler1);
         predictionMarket.buyTokenWithETH{ value: ethNeeded }(0, 0, tradingAmount);
         _;
@@ -131,12 +130,13 @@ contract PredictionMarketTradingTest is Test {
         uint256 tradingAmount = 100 ether;
         uint256 lpreserveBefore = predictionMarket.getLpReserve(0);
         uint256 option1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
-        uint256 ethReserve = predictionMarket.getPredictionEthReserve(0);
         uint256 initialTokenAmount = predictionMarket.getInitialTokenAmount(0);
         uint256 token1TokenReserve = predictionMarket.getTokenReserve(0, 0);
-        uint256 ethNeeded = predictionMarket.avgPriceInEth(
-            initialTokenAmount, token1TokenReserve, ethReserve, tradingAmount
-        ) * tradingAmount / 1e18;
+
+        uint256 ethNeeded = predictionMarket.avgPriceInEth(0, initialTokenAmount, token1TokenReserve, tradingAmount)
+            * tradingAmount / 1e18;
+
+        console.log("token ratio", predictionMarket.getTokenRatio(0));
         console.log("eth needed", ethNeeded);
         console.log("gambler1 eth balance", address(gambler1).balance);
         vm.prank(gambler1);

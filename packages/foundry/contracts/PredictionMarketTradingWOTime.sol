@@ -37,6 +37,7 @@ contract PredictionMarketTradingWOTime {
         mapping(uint256 => uint256) tokenReserves; // amount of tokens in the pool
         uint256 winningOptionId;
         bool isReported;
+        uint256 tokenRatio;
         uint256 initialTokenAmount; // per option --> to calculate the percentage of each token
         uint256 initialLiquidity; // when prediciton is opened --> to calculate the percentage of each token
         uint256 ethReserve; // eth pot which get's later distributed to winners
@@ -107,6 +108,7 @@ contract PredictionMarketTradingWOTime {
         prediction.liquidity[msg.sender] += msg.value;
         prediction.initialTokenAmount = _initialTokenAmount;
         prediction.initialLiquidity = msg.value;
+        prediction.tokenRatio = (_initialTokenAmount * PRECISION * PRECISION) / msg.value;
         // Create tokens for each option and initialize liquidity
         for (uint256 i = 0; i < _options.length; i++) {
             prediction.options[i] = _options[i];
@@ -143,8 +145,7 @@ contract PredictionMarketTradingWOTime {
         uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
 
         // Calculate eth need to buy amount of tokens
-        uint256 avgPrice =
-            avgPriceInEth(initialTokenAmount, currentTokenReserve, prediction.ethReserve, _amountTokenToBuy);
+        uint256 avgPrice = avgPriceInEth(_predictionId, initialTokenAmount, currentTokenReserve, _amountTokenToBuy);
 
         uint256 ethNeeded = avgPrice * _amountTokenToBuy / PRECISION;
 
@@ -171,8 +172,7 @@ contract PredictionMarketTradingWOTime {
         uint256 initialTokenAmount = prediction.initialTokenAmount;
         uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
 
-        uint256 avgPrice =
-            sellAvgPriceInEth(initialTokenAmount, currentTokenReserve, prediction.ethReserve, _tokenAmountToSell);
+        uint256 avgPrice = sellAvgPriceInEth(_predictionId, initialTokenAmount, currentTokenReserve, _tokenAmountToSell);
 
         uint256 ethToReceive = avgPrice * _tokenAmountToSell / PRECISION;
 
@@ -250,11 +250,11 @@ contract PredictionMarketTradingWOTime {
      * DEX functions
      */
     function avgPriceInEth(
+        uint256 _predictionId,
         uint256 _initialTokenAmount,
         uint256 _currentTokenReserve,
-        uint256 _ethReserve,
         uint256 _tradingAmount
-    ) public pure returns (uint256) {
+    ) public view returns (uint256) {
         // First calculate the average of numerator1 and numerator2 to reduce the size
         uint256 num1 = (PRECISION - ((_currentTokenReserve * PRECISION) / (_initialTokenAmount * 2)));
         uint256 num2 = (PRECISION - (((_currentTokenReserve - _tradingAmount) * PRECISION) / (_initialTokenAmount * 2)));
@@ -263,7 +263,7 @@ contract PredictionMarketTradingWOTime {
         uint256 avgNumerator = (num1 + num2) / 2;
 
         // Then multiply by tokenRatio
-        uint256 tokenRatio = (_ethReserve * PRECISION * PRECISION) / _initialTokenAmount;
+        uint256 tokenRatio = s_predictions[_predictionId].tokenRatio;
 
         uint256 result = (tokenRatio * avgNumerator) / PRECISION / PRECISION;
 
@@ -273,11 +273,11 @@ contract PredictionMarketTradingWOTime {
 
     // - operation is different to function above
     function sellAvgPriceInEth(
+        uint256 _predictionId,
         uint256 _initialTokenAmount,
         uint256 _currentTokenReserve,
-        uint256 _ethReserve,
         uint256 _tradingAmount
-    ) public pure returns (uint256) {
+    ) public view returns (uint256) {
         // First calculate the average of numerator1 and numerator2 to reduce the size
         uint256 num1 = (PRECISION - ((_currentTokenReserve * PRECISION) / (_initialTokenAmount * 2)));
         uint256 num2 = (PRECISION - (((_currentTokenReserve + _tradingAmount) * PRECISION) / (_initialTokenAmount * 2)));
@@ -286,7 +286,7 @@ contract PredictionMarketTradingWOTime {
         uint256 avgNumerator = (num1 + num2) / 2;
 
         // Then multiply by tokenRatio
-        uint256 tokenRatio = (_ethReserve * PRECISION * PRECISION) / _initialTokenAmount;
+        uint256 tokenRatio = s_predictions[_predictionId].tokenRatio;
 
         uint256 result = (tokenRatio * avgNumerator) / PRECISION / PRECISION;
 
