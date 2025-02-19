@@ -9,12 +9,17 @@ export function ReportPrediction() {
   const { address } = useAccount();
 
   const { writeContractAsync } = useScaffoldWriteContract({
-    contractName: "PredictionMarketTradingWOTime",
+    contractName: "PredictionMarket",
   });
 
   const { data: oracleAddress } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "s_oracle",
+    contractName: "PredictionMarket",
+    functionName: "oracle",
+  });
+
+  const { data: prediction, isLoading } = useScaffoldReadContract({
+    contractName: "PredictionMarket",
+    functionName: "prediction",
   });
 
   const isOracle = address === oracleAddress;
@@ -23,14 +28,14 @@ export function ReportPrediction() {
     try {
       await writeContractAsync({
         functionName: "report",
-        args: [BigInt(0), BigInt(selectedOutcome)],
+        args: [BigInt(selectedOutcome)],
       });
     } catch (error) {
       console.error("Error reporting outcome:", error);
     }
   };
 
-  console.log("selectedOutcome", selectedOutcome);
+  if (!prediction) return null;
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
@@ -43,8 +48,8 @@ export function ReportPrediction() {
           onChange={e => setSelectedOutcome(Number(e.target.value))}
           disabled={!isOracle}
         >
-          <option value={0}>Yes</option>
-          <option value={1}>No</option>
+          <option value={0}>{prediction[1]}</option>
+          <option value={1}>{prediction[2]}</option>
         </select>
         <button className="btn btn-primary" onClick={handleReport} disabled={!isOracle}>
           Report Outcome

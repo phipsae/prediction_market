@@ -2,8 +2,8 @@
 pragma solidity ^0.8.19;
 
 import "./DeployHelpers.s.sol";
-import { PredictionMarketTrading } from "../contracts/PredictionMarketTrading.sol";
-import { PredictionMarketTradingWOTime } from "../contracts/PredictionMarketTradingWOTime.sol";
+import {PredictionMarket} from "../contracts/PredictionMarket.sol";
+
 /**
  * @notice Deploy script for YourContract contract
  * @dev Inherits ScaffoldETHDeploy which:
@@ -64,15 +64,15 @@ contract DeployPredictionMarket is ScaffoldETHDeploy {
         /// PredictionWithoutTime
         // Fund deployer with initial ETH
         vm.deal(deployer, 100 ether);
-        PredictionMarketTradingWOTime predictionMarketWOTime = new PredictionMarketTradingWOTime(deployer);
-        string memory question = "Will ETH reach $20k by end of 2025?";
+
         uint256 initialLiquidity = 0.1 ether;
 
-        string[] memory options = new string[](2);
-        options[0] = "Yes";
-        options[1] = "No";
-        uint256 initialTokenAmount = 1000 ether;
-
-        predictionMarketWOTime.createPrediction{ value: initialLiquidity }(question, options, initialTokenAmount);
+        new PredictionMarket{value: initialLiquidity}(
+            deployer,
+            "Will ETH reach $20k by end of 2025?",
+            "Yes",
+            "No",
+            1000 ether
+        );
     }
 }
