@@ -6,8 +6,8 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
   31337: {
-    PredictionMarketTradingWOTime: {
-      address: "0x497d8ea7ad4195f7d40009d2fe3213e9ba048ad6",
+    PredictionMarketOrderBook: {
+      address: "0xb20e590599ec420b197a04a590d2f4f597674b46",
       abi: [
         {
           type: "constructor",
@@ -22,189 +22,10 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "addLiquidity",
+          name: "OPTIONS",
           inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "payable",
-        },
-        {
-          type: "function",
-          name: "avgPriceInEth",
-          inputs: [
-            {
-              name: "_initialTokenAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_currentTokenReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_ethReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_tradingAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
             {
               name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "pure",
-        },
-        {
-          type: "function",
-          name: "buyTokenWithETH",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_amountTokenToBuy",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "payable",
-        },
-        {
-          type: "function",
-          name: "createPrediction",
-          inputs: [
-            {
-              name: "_question",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "_options",
-              type: "string[]",
-              internalType: "string[]",
-            },
-            {
-              name: "_initialTokenAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "payable",
-        },
-        {
-          type: "function",
-          name: "getInitialLiquidity",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getInitialTokenAmount",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getLiquidity",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_address",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getLpReserve",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getOptions",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
               type: "uint256",
               internalType: "uint256",
             },
@@ -220,117 +41,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "getOptionsToken",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "contract PredictionOptionToken",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getPredictionEthReserve",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getPredictionLpReserve",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getPredictionOption",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getPredictionOptionToken",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "contract PredictionOptionToken",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getPredictionOptionsCount",
+          name: "PRECISION",
           inputs: [],
           outputs: [
             {
@@ -339,18 +50,12 @@ const deployedContracts = {
               internalType: "uint256",
             },
           ],
-          stateMutability: "pure",
+          stateMutability: "view",
         },
         {
           type: "function",
-          name: "getPredictionQuestion",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
+          name: "QUESTION",
+          inputs: [],
           outputs: [
             {
               name: "",
@@ -362,10 +67,15 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "getPredictionWinningOptionId",
+          name: "calculateMatchingETHValue",
           inputs: [
             {
-              name: "_predictionId",
+              name: "_probability",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_ethToMatch",
               type: "uint256",
               internalType: "uint256",
             },
@@ -381,10 +91,20 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "getRedemptionRate",
+          name: "calculateTokenAmount",
           inputs: [
             {
-              name: "_predictionId",
+              name: "_ethAmountYes",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_ethAmountNo",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_redeemPrice",
               type: "uint256",
               internalType: "uint256",
             },
@@ -400,17 +120,81 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "getReported",
+          name: "i_noToken",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract PredictionOptionTokenOrderBook",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_oracle",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_yesToken",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract PredictionOptionTokenOrderBook",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "offers",
           inputs: [
             {
-              name: "_predictionId",
+              name: "",
               type: "uint256",
               internalType: "uint256",
             },
           ],
           outputs: [
             {
-              name: "",
+              name: "creator",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "probability",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "ethAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "yesTokenAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "noTokenAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "isActive",
               type: "bool",
               internalType: "bool",
             },
@@ -419,104 +203,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "getTokenReserve",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getWinningOptionId",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "redeemWinningTokens",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "removeLiquidity",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_ethToWithdraw",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "report",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_winningOption",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "s_nextPredictionId",
+          name: "reedemPrice",
           inputs: [],
           outputs: [
             {
@@ -526,135 +213,10 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "s_oracle",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "sellAvgPriceInEth",
-          inputs: [
-            {
-              name: "_initialTokenAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_currentTokenReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_ethReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_tradingAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "pure",
-        },
-        {
-          type: "function",
-          name: "sellTokensForEth",
-          inputs: [
-            {
-              name: "_predictionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_tokenAmountToSell",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__InsufficientLiquidity",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__InsufficientWinningTokens",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__InvalidOption",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__InvalidWinningOption",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__MustProvideETHForInitialLiquidity",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__NeedExactlyTwoOptions",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__NoLiquidityToRemove",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__OnlyOracleCanCreatePredictions",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__OnlyOracleCanReport",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__PredictionAlreadyResolved",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "PredictionMarketTrading__PredictionNotResolved",
-          inputs: [],
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1739289551.json",
+      deploymentFile: "run-1739979459.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
@@ -691,17 +253,17 @@ const deployedContracts = {
           name: "avgPriceInEth",
           inputs: [
             {
+              name: "_predictionId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
               name: "_initialTokenAmount",
               type: "uint256",
               internalType: "uint256",
             },
             {
               name: "_currentTokenReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_ethReserve",
               type: "uint256",
               internalType: "uint256",
             },
@@ -718,7 +280,7 @@ const deployedContracts = {
               internalType: "uint256",
             },
           ],
-          stateMutability: "pure",
+          stateMutability: "view",
         },
         {
           type: "function",
@@ -1198,17 +760,17 @@ const deployedContracts = {
           name: "sellAvgPriceInEth",
           inputs: [
             {
+              name: "_predictionId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
               name: "_initialTokenAmount",
               type: "uint256",
               internalType: "uint256",
             },
             {
               name: "_currentTokenReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "_ethReserve",
               type: "uint256",
               internalType: "uint256",
             },
@@ -1225,7 +787,7 @@ const deployedContracts = {
               internalType: "uint256",
             },
           ],
-          stateMutability: "pure",
+          stateMutability: "view",
         },
         {
           type: "function",
