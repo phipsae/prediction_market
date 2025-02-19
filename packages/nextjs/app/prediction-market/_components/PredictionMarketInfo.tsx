@@ -62,11 +62,16 @@ export function PredictionMarketInfo() {
   });
 
   const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
-    const option1Chance =
-      1 -
-      Number(formatEther(BigInt(_token1Reserve ?? 0))) /
-        Number(formatEther(BigInt(_token1Reserve ?? 0) + BigInt(_token2Reserve ?? 0)));
-    return option1Chance;
+    if (_token1Reserve === undefined || _token2Reserve === undefined) return 0;
+
+    const token1Supply = 1000 - Number(formatEther(_token1Reserve));
+    const token2Supply = 1000 - Number(formatEther(_token2Reserve));
+
+    if (token1Supply + token2Supply === 0) return 0;
+
+    const option1Chance = token1Supply / (token1Supply + token2Supply);
+
+    return Number(option1Chance);
   };
 
   return (
