@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     PredictionMarketChallenge: {
-      address: "0x107d6f280a05f07b59039143ca21e3f917aafa30",
+      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
       abi: [
         {
           type: "constructor",
@@ -16,6 +16,11 @@ const deployedContracts = {
               name: "_oracle",
               type: "address",
               internalType: "address",
+            },
+            {
+              name: "_question",
+              type: "string",
+              internalType: "string",
             },
           ],
           stateMutability: "payable",
@@ -35,20 +40,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "QUESTION",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "buyTokenWithETH",
+          name: "buyTokensWithETH",
           inputs: [
             {
               name: "_option",
@@ -160,6 +152,97 @@ const deployedContracts = {
               name: "",
               type: "address",
               internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_question",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "prediction",
+          inputs: [],
+          outputs: [
+            {
+              name: "question",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "outcome1",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "outcome2",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "oracle",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "initialTokenRatio",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "token1Reserve",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "token2Reserve",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "winningOptionId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "isReported",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "optionToken1",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "optionToken2",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "winningToken",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "ethCollateral",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "lpTradingRevenue",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           stateMutability: "view",
@@ -409,7 +492,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1740052658.json",
+      deploymentFile: "run-1740061439.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

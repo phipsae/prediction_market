@@ -6,7 +6,7 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionMarketInfo() {
   const { data: prediction, isLoading } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
+    contractName: "PredictionMarketChallenge",
     functionName: "prediction",
   });
 
@@ -23,19 +23,21 @@ export function PredictionMarketInfo() {
     return Number(option1Chance);
   };
 
-  if (isLoading) return (
-    <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">Prediction Market Info</h2>
-      <p className="text-base-content">Loading prediction market...</p>
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 text-center">Prediction Market Info</h2>
+        <p className="text-base-content">Loading prediction market...</p>
+      </div>
+    );
 
-  if (!prediction) return (
-    <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">Prediction Market Info</h2>
-      <p className="text-base-content">No prediction market found</p>
-    </div>
-  );
+  if (!prediction)
+    return (
+      <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 text-center">Prediction Market Info</h2>
+        <p className="text-base-content">No prediction market found</p>
+      </div>
+    );
 
   const reported = prediction[8];
   const winningOptionId = prediction[7];
@@ -60,16 +62,17 @@ export function PredictionMarketInfo() {
           <div className="bg-base-200 p-4 rounded-lg">
             <h3 className="text-lg font-semibold mb-2">Probability</h3>
             <div
-              className={`radial-progress ${reported
-                ? winningOptionId === BigInt(0)
-                  ? "text-success"
-                  : "text-error"
-                : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) > 0.5
-                  ? "text-success"
-                  : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) === 0.5
-                    ? "text-neutral"
+              className={`radial-progress ${
+                reported
+                  ? winningOptionId === BigInt(0)
+                    ? "text-success"
                     : "text-error"
-                }`}
+                  : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) > 0.5
+                    ? "text-success"
+                    : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) === 0.5
+                      ? "text-neutral"
+                      : "text-error"
+              }`}
               style={
                 {
                   "--value": reported
@@ -85,7 +88,7 @@ export function PredictionMarketInfo() {
                   ? "100.00%"
                   : "0.00%"
                 : (calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
-                "%"}
+                  "%"}
             </div>
           </div>
 

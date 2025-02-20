@@ -31,8 +31,6 @@ contract PredictionMarketChallenge {
     }
 
     uint256 private constant PRECISION = 1e18;
-
-    string public constant QUESTION = "Will ETH reach $20k by end of 2025?";
     uint256 public constant INITIAL_TOKEN_AMOUNT = 1000 ether;
 
     address public immutable i_oracle; // is owner of contract as well
@@ -40,6 +38,7 @@ contract PredictionMarketChallenge {
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
 
+    string public i_question;
     PredictionMarketToken public s_winningToken;
     bool public s_isReported;
     uint256 public s_ethCollateral; // used to be ethReserve; eth pot which get's later distributed to winners
@@ -75,9 +74,9 @@ contract PredictionMarketChallenge {
     /// Functions ///
     /////////////////
 
-    constructor(address _oracle) payable {
+    constructor(address _oracle, string memory _question) payable {
         i_oracle = _oracle;
-
+        i_question = _question;
         if (msg.value <= 0) {
             revert PredictionMarketChallenge__MustProvideETHForInitialLiquidity();
         }
@@ -261,5 +260,62 @@ contract PredictionMarketChallenge {
 
         uint256 avg = (i_initialTokenRatio * avgNumerator) / PRECISION / PRECISION;
         return (avg * _tradingAmount) / PRECISION;
+    }
+
+    /////////////////////////
+    /// Getter Functions ///
+    ////////////////////////
+
+    /**
+     * @notice Get all prediction market variables in a single call
+     * @return question The prediction market question
+     * @return outcome1 The YES token name
+     * @return outcome2 The NO token name
+     * @return oracle The oracle address
+     * @return initialTokenRatio The initial token ratio
+     * @return token1Reserve The current YES token reserve
+     * @return token2Reserve The current NO token reserve
+     * @return winningOptionId 0 for YES, 1 for NO (only valid if reported)
+     * @return isReported Whether the prediction has been reported
+     * @return optionToken1 The YES token contract address
+     * @return optionToken2 The NO token contract address
+     * @return winningToken The winning token contract address (only valid if reported)
+     * @return ethCollateral The ETH collateral pool
+     * @return lpTradingRevenue The accumulated LP trading fees
+     */
+    function prediction()
+        external
+        view
+        returns (
+            string memory question,
+            string memory outcome1,
+            string memory outcome2,
+            address oracle,
+            uint256 initialTokenRatio,
+            uint256 token1Reserve,
+            uint256 token2Reserve,
+            uint256 winningOptionId,
+            bool isReported,
+            address optionToken1,
+            address optionToken2,
+            address winningToken,
+            uint256 ethCollateral,
+            uint256 lpTradingRevenue
+        )
+    {
+        question = i_question;
+        outcome1 = i_optionToken1.name();
+        outcome2 = i_optionToken2.name();
+        oracle = i_oracle;
+        initialTokenRatio = i_initialTokenRatio;
+        token1Reserve = i_optionToken1.balanceOf(address(this));
+        token2Reserve = i_optionToken2.balanceOf(address(this));
+        winningOptionId = s_winningToken == i_optionToken1 ? 0 : 1;
+        isReported = s_isReported;
+        optionToken1 = address(i_optionToken1);
+        optionToken2 = address(i_optionToken2);
+        winningToken = address(s_winningToken);
+        ethCollateral = s_ethCollateral;
+        lpTradingRevenue = s_lpTradingRevenue;
     }
 }

@@ -19,7 +19,9 @@ contract PredictionMarketChallengeTest is Test {
         deal(gambler3, 10 ether);
         deal(gambler1, 10 ether);
         vm.prank(oracle);
-        predictionMarket = new PredictionMarketChallenge{ value: initialLiquidity }(oracle);
+        predictionMarket = new PredictionMarketChallenge{ value: initialLiquidity }(
+            oracle, "Will ETH reach 20k by the end of the year 2025"
+        );
     }
 
     modifier withFirstPurchase() {
