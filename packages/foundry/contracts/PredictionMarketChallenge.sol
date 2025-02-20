@@ -33,8 +33,6 @@ contract PredictionMarketChallenge {
     uint256 private constant PRECISION = 1e18;
 
     string public constant QUESTION = "Will ETH reach $20k by end of 2025?";
-    string public constant OPTION1 = "YES"; // maybe not needed --> Enum
-    string public constant OPTION2 = "NO"; // maybe not needed --> Enum
     uint256 public constant INITIAL_TOKEN_AMOUNT = 1000 ether;
 
     address public immutable i_oracle; // is owner of contract as well
@@ -43,9 +41,7 @@ contract PredictionMarketChallenge {
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
 
-    uint256 public s_tokenReserve1; //TODO: do I need this? --> not enough to ask for balance?
-    uint256 public s_tokenReserve2; //TODO: do I need this? --> not enough to ask for balance?
-    Option public s_winningOption;
+    PredictionMarketToken public s_winningToken;
     bool public s_isReported;
     uint256 public s_ethCollateral; // used to be ethReserve; eth pot which get's later distributed to winners
     uint256 public s_lpTradingRevenue; // used to be lpReserve; fees which get's later distributed to liquidity providers, TODO: find better word
@@ -56,7 +52,7 @@ contract PredictionMarketChallenge {
 
     event TokensPurchased(address indexed buyer, Option option, uint256 amount, uint256 ethAmount);
     event TokensSold(address indexed seller, Option option, uint256 amount, uint256 ethAmount);
-    event WinningTokensRedeemed(address indexed redeemer, Option winningOption, uint256 amount, uint256 ethAmount);
+    event WinningTokensRedeemed(address indexed redeemer, uint256 amount, uint256 ethAmount);
 
     /////////////////
     /// Modifiers ///
@@ -91,13 +87,8 @@ contract PredictionMarketChallenge {
         i_initialLiquidity = msg.value;
         i_initialTokenRatio = (msg.value * PRECISION * PRECISION) / INITIAL_TOKEN_AMOUNT;
 
-        i_optionToken1 = new PredictionMarketToken(OPTION1, OPTION1);
-        i_optionToken2 = new PredictionMarketToken(OPTION2, OPTION2);
-        // Create tokens for each option --> what if we put this in the constructor of the ERC20?
-        i_optionToken1.mint(address(this), INITIAL_TOKEN_AMOUNT);
-        i_optionToken2.mint(address(this), INITIAL_TOKEN_AMOUNT);
-        s_tokenReserve1 = INITIAL_TOKEN_AMOUNT;
-        s_tokenReserve2 = INITIAL_TOKEN_AMOUNT;
+        i_optionToken1 = new PredictionMarketToken("Yes", "Y", INITIAL_TOKEN_AMOUNT);
+        i_optionToken2 = new PredictionMarketToken("No", "N", INITIAL_TOKEN_AMOUNT);
     }
 
     /**
@@ -122,17 +113,14 @@ contract PredictionMarketChallenge {
 
         PredictionMarketToken optionToken;
         if (_option == Option.YES) {
-            // Check sufficient token reserve
-            if (_amountTokenToBuy > s_tokenReserve1) {
+            if (_amountTokenToBuy > i_optionToken1.balanceOf(address(this))) {
                 revert PredictionMarketChallenge__InsufficientTokenReserve();
             }
-            s_tokenReserve1 -= _amountTokenToBuy;
             optionToken = i_optionToken1;
         } else {
-            if (_amountTokenToBuy > s_tokenReserve2) {
+            if (_amountTokenToBuy > i_optionToken2.balanceOf(address(this))) {
                 revert PredictionMarketChallenge__InsufficientTokenReserve();
             }
-            s_tokenReserve2 -= _amountTokenToBuy;
             optionToken = i_optionToken2;
         }
 
@@ -165,10 +153,8 @@ contract PredictionMarketChallenge {
 
         PredictionMarketToken optionToken;
         if (_option == Option.YES) {
-            s_tokenReserve1 += _tradingAmount;
             optionToken = i_optionToken1;
         } else {
-            s_tokenReserve2 += _tradingAmount;
             optionToken = i_optionToken2;
         }
 
@@ -188,7 +174,7 @@ contract PredictionMarketChallenge {
             revert PredictionMarketChallenge__OnlyOracleCanReport();
         }
         // Set winning option
-        s_winningOption = _winningOption;
+        s_winningToken = _winningOption == Option.YES ? i_optionToken1 : i_optionToken2;
         s_isReported = true;
     }
 
@@ -203,36 +189,19 @@ contract PredictionMarketChallenge {
             revert PredictionMarketChallenge__PredictionNotResolved();
         }
 
-        PredictionMarketToken winningToken;
-        uint256 tokenReserve;
-
-        if (s_winningOption == Option.YES) {
-            winningToken = i_optionToken1;
-            tokenReserve = s_tokenReserve1;
-        } else {
-            winningToken = i_optionToken2;
-            tokenReserve = s_tokenReserve2;
-        }
-
-        // Check caller has enough winning tokens
-        if (winningToken.balanceOf(msg.sender) < _amount) {
+        if (s_winningToken.balanceOf(msg.sender) < _amount) {
             revert PredictionMarketChallenge__InsufficientWinningTokens();
         }
 
-        uint256 totalSupply = winningToken.totalSupply();
+        /// TODO: check if really needed
+        uint256 totalSupply = s_winningToken.totalSupply();
         uint256 ethToReceive = (_amount * s_ethCollateral) / totalSupply;
 
         // Update state
         s_ethCollateral -= ethToReceive;
 
-        if (s_winningOption == Option.YES) {
-            s_tokenReserve1 -= _amount;
-        } else {
-            s_tokenReserve2 -= _amount;
-        }
-
         // Burn tokens first to prevent reentrancy
-        winningToken.burn(msg.sender, _amount);
+        s_winningToken.burn(msg.sender, _amount);
 
         // Transfer ETH to user
         (bool success,) = msg.sender.call{ value: ethToReceive }("");
@@ -240,7 +209,7 @@ contract PredictionMarketChallenge {
             revert PredictionMarketChallenge__ETHTransferFailed();
         }
 
-        emit WinningTokensRedeemed(msg.sender, s_winningOption, _amount, ethToReceive);
+        emit WinningTokensRedeemed(msg.sender, _amount, ethToReceive);
     }
 
     /**
@@ -278,7 +247,8 @@ contract PredictionMarketChallenge {
         view
         returns (uint256)
     {
-        uint256 currentTokenReserve = _option == Option.YES ? s_tokenReserve1 : s_tokenReserve2;
+        uint256 currentTokenReserve =
+            _option == Option.YES ? i_optionToken1.balanceOf(address(this)) : i_optionToken2.balanceOf(address(this));
         uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
 
         uint256 num1 = (PRECISION - ((currentTokenReserve * PRECISION) / (INITIAL_TOKEN_AMOUNT * 2)));
