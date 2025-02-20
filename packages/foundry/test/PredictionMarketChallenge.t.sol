@@ -95,7 +95,7 @@ contract PredictionMarketChallengeTest is Test {
 
         vm.prank(gambler1);
         vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__PredictionAlreadyResolved.selector);
-        predictionMarket.buyTokenWithETH{ value: 1 ether }(PredictionMarketChallenge.Option.YES, 100);
+        predictionMarket.buyTokensWithETH{ value: 1 ether }(PredictionMarketChallenge.Option.YES, 100);
     }
 
     function testRedeemWinningTokens() public withFirstPurchase withPredictionReported {
