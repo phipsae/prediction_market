@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { parseEther } from "viem";
 import { useWriteContract } from "wagmi";
+import { notification } from "~~/utils/scaffold-eth";
 
 const erc20Abi = [
   {
@@ -33,6 +34,7 @@ export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: 
         functionName: "approve",
         args: [spenderAddress, parseEther(amount || "0")],
       });
+      notification.success("Tokens approved successfully");
     } catch (error) {
       console.error("Error approving tokens:", error);
     }

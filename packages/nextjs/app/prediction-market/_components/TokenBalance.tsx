@@ -1,7 +1,10 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { formatEther } from "viem";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useBlockNumber, useReadContract } from "wagmi";
+import { useSelectedNetwork } from "~~/hooks/scaffold-eth";
 
 const erc20Abi = [
   {
@@ -16,14 +19,27 @@ const erc20Abi = [
 export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; option: string }) {
   const { address } = useAccount();
 
-  const { data: balance } = useReadContract({
+  const { data: balance, queryKey } = useReadContract({
     abi: erc20Abi,
     address: tokenAddress,
     functionName: "balanceOf",
     args: [address ?? "0x0"],
   });
 
-  console.log("balance", balance);
+  const selectedNetwork = useSelectedNetwork();
+  const queryClient = useQueryClient();
+  const { data: blockNumber } = useBlockNumber({
+    watch: true,
+    chainId: selectedNetwork.id,
+    query: {
+      enabled: true,
+    },
+  });
+
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockNumber]);
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
