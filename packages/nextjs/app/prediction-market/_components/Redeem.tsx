@@ -10,36 +10,41 @@ export function Redeem() {
   const [amount, setAmount] = useState<bigint>(BigInt(0));
   const tokenAmount = parseEther((amount || BigInt(0)).toString());
 
-  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarket" });
+  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
   const contractAddress = deployedContractData?.address;
 
   const { data: prediction, isLoading } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
+    contractName: "PredictionMarketChallenge",
     functionName: "prediction",
   });
 
   const { writeContractAsync } = useScaffoldWriteContract({
-    contractName: "PredictionMarket",
+    contractName: "PredictionMarketChallenge",
   });
 
-  if (isLoading) return (
-    <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
-      <p className="text-base-content">Loading prediction market...</p>
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
+        <p className="text-base-content">Loading prediction market...</p>
+      </div>
+    );
 
-  if (!prediction) return (
-    <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
-      <p className="text-base-content">No prediction market found</p>
-    </div>
-  );
+  if (!prediction)
+    return (
+      <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
+        <p className="text-base-content">No prediction market found</p>
+      </div>
+    );
 
-  const winningOptionId = prediction[7];
-  const isReported = prediction[8];
-  const tokenAddress = prediction[3 + Number(winningOptionId)];
-  const winningOption = prediction[1 + Number(winningOptionId)];
+  const predictionOutcome1 = prediction[1];
+  const predictionOutcome2 = prediction[2];
+  const isReported = prediction[7];
+  const optionToken1 = prediction[8];
+  const winningToken = prediction[10];
+  const tokenAddress = winningToken === optionToken1 ? prediction[8] : prediction[9];
+  const winningOption = winningToken === optionToken1 ? predictionOutcome1 : predictionOutcome2;
 
   const handleRedeem = async () => {
     try {
@@ -55,7 +60,7 @@ export function Redeem() {
   return (
     <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
-      {isReported && tokenAddress && winningOptionId !== undefined && winningOption && (
+      {isReported && tokenAddress && winningOption && (
         <TokenBalance tokenAddress={tokenAddress as string} option={winningOption as string} />
       )}
       {tokenAddress && contractAddress && (

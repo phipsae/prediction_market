@@ -9,26 +9,19 @@ export function ReportPrediction() {
   const { address } = useAccount();
 
   const { writeContractAsync } = useScaffoldWriteContract({
-    contractName: "PredictionMarket",
+    contractName: "PredictionMarketChallenge",
   });
 
-  const { data: oracleAddress } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
-    functionName: "oracle",
-  });
-
-  const { data: prediction, isLoading } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
+  const { data: prediction } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
     functionName: "prediction",
   });
-
-  const isOracle = address === oracleAddress;
 
   const handleReport = async () => {
     try {
       await writeContractAsync({
         functionName: "report",
-        args: [BigInt(selectedOutcome)],
+        args: [selectedOutcome],
       });
     } catch (error) {
       console.error("Error reporting outcome:", error);
@@ -37,6 +30,7 @@ export function ReportPrediction() {
 
   if (!prediction) return null;
 
+  const isOracle = address === prediction[3];
   return (
     <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold text-center mb-4">Report Prediction Outcome</h2>

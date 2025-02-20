@@ -39,14 +39,19 @@ export function PredictionMarketInfo() {
       </div>
     );
 
-  const reported = prediction[8];
-  const winningOptionId = prediction[7];
-  const token1Reserve = prediction[5];
-  const token2Reserve = prediction[6];
-  const ethReserve = prediction[12];
-  const lpReserve = prediction[13];
+  const question = prediction[0];
   const predictionOutcome1 = prediction[1];
   const predictionOutcome2 = prediction[2];
+  // const oracle = prediction[3];
+  // const intitalTokenRatio = prediction[4];
+  const token1Reserve = prediction[5];
+  const token2Reserve = prediction[6];
+  const reported = prediction[7];
+  const optionToken1 = prediction[8];
+  // const optionToken2 = prediction[9];
+  const winningToken = prediction[10];
+  const ethCollateral = prediction[11];
+  const lpTradingRevenue = prediction[12];
 
   return (
     <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
@@ -55,7 +60,7 @@ export function PredictionMarketInfo() {
       <div className="space-y-6">
         <div className="bg-base-200 p-4 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Question</h3>
-          <p className="text-base-content">{prediction[0]}</p>
+          <p className="text-base-content">{question}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -64,7 +69,7 @@ export function PredictionMarketInfo() {
             <div
               className={`radial-progress ${
                 reported
-                  ? winningOptionId === BigInt(0)
+                  ? winningToken === optionToken1
                     ? "text-success"
                     : "text-error"
                   : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) > 0.5
@@ -76,7 +81,7 @@ export function PredictionMarketInfo() {
               style={
                 {
                   "--value": reported
-                    ? winningOptionId === BigInt(0)
+                    ? winningToken === optionToken1
                       ? 100
                       : 0
                     : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100,
@@ -84,7 +89,7 @@ export function PredictionMarketInfo() {
               }
             >
               {reported
-                ? winningOptionId === BigInt(0)
+                ? winningToken === optionToken1
                   ? "100.00%"
                   : "0.00%"
                 : (calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
@@ -106,13 +111,13 @@ export function PredictionMarketInfo() {
             <div className="stat">
               <div className="stat-title">Winning Pot</div>
               <div className="stat-value text-primary">
-                {Number(formatEther(BigInt(ethReserve ?? 0))).toFixed(4)} ETH
+                {Number(formatEther(BigInt(ethCollateral ?? 0))).toFixed(4)} ETH
               </div>
             </div>
             <div className="stat">
               <div className="stat-title">LP Revenue</div>
               <div className="stat-value text-secondary">
-                {Number(formatEther(BigInt(lpReserve ?? 0))).toFixed(4)} ETH
+                {Number(formatEther(BigInt(lpTradingRevenue ?? 0))).toFixed(4)} ETH
               </div>
             </div>
           </div>

@@ -20,6 +20,8 @@ contract PredictionMarketChallenge {
     error PredictionMarketChallenge__TokenTransferFailed();
     error PredictionMarketChallenge__NoTokensToRedeem();
     error PredictionMarketChallenge__ETHTransferFailed();
+    error PredictionMarketChallenge__InsufficientBalance(uint256 _tradingAmount, uint256 _userBalance);
+    error PredictionMarketChallenge__InsufficientAllowance(uint256 _tradingAmount, uint256 _allowance);
 
     //////////////////////////
     /// State Variables //////
@@ -108,17 +110,10 @@ contract PredictionMarketChallenge {
             revert PredictionMarketChallenge__MustSendExactETHAmount();
         }
 
-        PredictionMarketToken optionToken;
-        if (_option == Option.YES) {
-            if (_amountTokenToBuy > i_optionToken1.balanceOf(address(this))) {
-                revert PredictionMarketChallenge__InsufficientTokenReserve();
-            }
-            optionToken = i_optionToken1;
-        } else {
-            if (_amountTokenToBuy > i_optionToken2.balanceOf(address(this))) {
-                revert PredictionMarketChallenge__InsufficientTokenReserve();
-            }
-            optionToken = i_optionToken2;
+        PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
+
+        if (_amountTokenToBuy > i_optionToken1.balanceOf(address(this))) {
+            revert PredictionMarketChallenge__InsufficientTokenReserve();
         }
 
         s_lpTradingRevenue += msg.value;
@@ -147,11 +142,16 @@ contract PredictionMarketChallenge {
 
         uint256 ethToReceive = getSellPriceInEth(_option, _tradingAmount);
 
-        PredictionMarketToken optionToken;
-        if (_option == Option.YES) {
-            optionToken = i_optionToken1;
-        } else {
-            optionToken = i_optionToken2;
+        PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
+
+        uint256 userBalance = optionToken.balanceOf(msg.sender);
+        if (userBalance < _tradingAmount) {
+            revert PredictionMarketChallenge__InsufficientBalance(_tradingAmount, userBalance);
+        }
+
+        uint256 allowance = optionToken.allowance(msg.sender, address(this));
+        if (allowance < _tradingAmount) {
+            revert PredictionMarketChallenge__InsufficientAllowance(_tradingAmount, allowance);
         }
 
         s_lpTradingRevenue -= ethToReceive;
@@ -277,7 +277,6 @@ contract PredictionMarketChallenge {
             uint256 initialTokenRatio,
             uint256 token1Reserve,
             uint256 token2Reserve,
-            address winningTokenAddress,
             bool isReported,
             address optionToken1,
             address optionToken2,
@@ -293,7 +292,6 @@ contract PredictionMarketChallenge {
         initialTokenRatio = i_initialTokenRatio;
         token1Reserve = i_optionToken1.balanceOf(address(this));
         token2Reserve = i_optionToken2.balanceOf(address(this));
-        winningTokenAddress = address(s_winningToken);
         isReported = s_isReported;
         optionToken1 = address(i_optionToken1);
         optionToken2 = address(i_optionToken2);

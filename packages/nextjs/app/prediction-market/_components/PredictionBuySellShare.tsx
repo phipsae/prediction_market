@@ -10,51 +10,47 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
   const [inputAmount, setInputAmount] = useState<bigint>(BigInt(0));
   const tokenAmount = parseEther((inputAmount || BigInt(0)).toString());
 
-  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarket" });
+  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
   const contractAddress = deployedContractData?.address;
 
   const { writeContractAsync: writeYourContractAsync } = useScaffoldWriteContract({
-    contractName: "PredictionMarket",
+    contractName: "PredictionMarketChallenge",
   });
 
   const { data: prediction, isLoading } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
+    contractName: "PredictionMarketChallenge",
     functionName: "prediction",
   });
 
   const { data: totalPriceInEth } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
-    functionName: "totalPriceInEth",
-    args: [
-      BigInt(optionIndex),
-      tokenAmount,
-    ],
+    contractName: "PredictionMarketChallenge",
+    functionName: "getBuyPriceInEth",
+    args: [optionIndex, tokenAmount],
     watch: true,
   });
 
   const { data: sellTotalPriceInEth } = useScaffoldReadContract({
-    contractName: "PredictionMarket",
-    functionName: "sellTotalPriceInEth",
-    args: [
-      BigInt(optionIndex),
-      tokenAmount,
-    ],
+    contractName: "PredictionMarketChallenge",
+    functionName: "getSellPriceInEth",
+    args: [optionIndex, tokenAmount],
     watch: true,
   });
 
-  if (isLoading) return (
-    <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
-      <h2 className="text-lg font-semibold text-center">Loading prediction market...</h2>
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+        <h2 className="text-lg font-semibold text-center">Loading prediction market...</h2>
+      </div>
+    );
 
-  if (!prediction) return (
-    <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
-      <h2 className="text-lg font-semibold text-center">No prediction market found</h2>
-    </div>
-  );
+  if (!prediction)
+    return (
+      <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+        <h2 className="text-lg font-semibold text-center">No prediction market found</h2>
+      </div>
+    );
 
-  const token1Address = prediction[3 + optionIndex];
+  const token1Address = prediction[8 + optionIndex];
   const option = prediction[1 + optionIndex];
 
   return (
@@ -83,8 +79,8 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
               onClick={async () => {
                 try {
                   await writeYourContractAsync({
-                    functionName: "buyTokenWithETH",
-                    args: [BigInt(optionIndex), tokenAmount],
+                    functionName: "buyTokensWithETH",
+                    args: [optionIndex, tokenAmount],
                     value: totalPriceInEth,
                   });
                 } catch (e) {
@@ -114,7 +110,9 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
             />
 
             {sellTotalPriceInEth && (
-              <div className={`text-sm text-${colorScheme}-800`}>ETH to receive: {formatEther(sellTotalPriceInEth)}</div>
+              <div className={`text-sm text-${colorScheme}-800`}>
+                ETH to receive: {formatEther(sellTotalPriceInEth)}
+              </div>
             )}
 
             <button
@@ -123,7 +121,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
                 try {
                   await writeYourContractAsync({
                     functionName: "sellTokensForEth",
-                    args: [BigInt(optionIndex), tokenAmount],
+                    args: [optionIndex, tokenAmount],
                   });
                 } catch (e) {
                   console.error("Error selling tokens:", e);

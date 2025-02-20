@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     PredictionMarketChallenge: {
-      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
+      address: "0xbb8c3b948d132f2e0da7aeb7156ef80ba0383586",
       abi: [
         {
           type: "constructor",
@@ -206,11 +206,6 @@ const deployedContracts = {
             },
             {
               name: "token2Reserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "winningOptionId",
               type: "uint256",
               internalType: "uint256",
             },
@@ -442,6 +437,38 @@ const deployedContracts = {
         },
         {
           type: "error",
+          name: "PredictionMarketChallenge__InsufficientAllowance",
+          inputs: [
+            {
+              name: "_tradingAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_allowance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__InsufficientBalance",
+          inputs: [
+            {
+              name: "_tradingAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_userBalance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
           name: "PredictionMarketChallenge__InsufficientTokenReserve",
           inputs: [],
         },
@@ -492,7 +519,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1740061439.json",
+      deploymentFile: "run-1740067227.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
