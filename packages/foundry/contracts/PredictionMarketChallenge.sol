@@ -36,7 +36,6 @@ contract PredictionMarketChallenge {
     uint256 public constant INITIAL_TOKEN_AMOUNT = 1000 ether;
 
     address public immutable i_oracle; // is owner of contract as well
-    uint256 public immutable i_initialLiquidity; // TODO: do I need this? --> isnt tokenratio enough? and the collateral gets tracked inside ethCollateral?
     uint256 public immutable i_initialTokenRatio;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
@@ -84,7 +83,6 @@ contract PredictionMarketChallenge {
         }
 
         s_ethCollateral = msg.value;
-        i_initialLiquidity = msg.value;
         i_initialTokenRatio = (msg.value * PRECISION * PRECISION) / INITIAL_TOKEN_AMOUNT;
 
         i_optionToken1 = new PredictionMarketToken("Yes", "Y", INITIAL_TOKEN_AMOUNT);
@@ -126,7 +124,6 @@ contract PredictionMarketChallenge {
 
         s_lpTradingRevenue += msg.value;
 
-        // Transfer tokens and update revenue
         bool success = optionToken.transfer(msg.sender, _amountTokenToBuy);
         if (!success) {
             revert PredictionMarketChallenge__TokenTransferFailed();
@@ -168,7 +165,10 @@ contract PredictionMarketChallenge {
         emit TokensSold(msg.sender, _option, _tradingAmount, ethToReceive);
     }
 
-    // function to report the winning option
+    /**
+     * @notice Report the winning option for the prediction
+     * @param _winningOption The winning option (YES or NO)
+     */
     function report(Option _winningOption) external onlyPredictionOpen withValidOption(_winningOption) {
         if (msg.sender != i_oracle) {
             revert PredictionMarketChallenge__OnlyOracleCanReport();
@@ -178,8 +178,10 @@ contract PredictionMarketChallenge {
         s_isReported = true;
     }
 
-    /// TODO: would be proably nice to have some kind of burn mechanism for the tokens with no value left
-    // Function for winners to claim their ETH
+    /**
+     * @notice Redeem winning tokens for ETH after prediction is resolved, winning tokens are burned and user receives ETH
+     * @param _amount The amount of winning tokens to redeem
+     */
     function redeemWinningTokens(uint256 _amount) external {
         if (_amount == 0) {
             revert PredictionMarketChallenge__AmountMustBeGreaterThanZero();
@@ -197,13 +199,10 @@ contract PredictionMarketChallenge {
         uint256 totalSupply = s_winningToken.totalSupply();
         uint256 ethToReceive = (_amount * s_ethCollateral) / totalSupply;
 
-        // Update state
         s_ethCollateral -= ethToReceive;
 
-        // Burn tokens first to prevent reentrancy
         s_winningToken.burn(msg.sender, _amount);
 
-        // Transfer ETH to user
         (bool success,) = msg.sender.call{ value: ethToReceive }("");
         if (!success) {
             revert PredictionMarketChallenge__ETHTransferFailed();

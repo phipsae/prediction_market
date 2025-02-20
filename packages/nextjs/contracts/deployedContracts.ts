@@ -17,37 +17,43 @@ const deployedContracts = {
               type: "address",
               internalType: "address",
             },
+          ],
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "INITIAL_TOKEN_AMOUNT",
+          inputs: [],
+          outputs: [
             {
-              name: "_question",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "_option1",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "_option2",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "_initialTokenAmount",
+              name: "",
               type: "uint256",
               internalType: "uint256",
             },
           ],
-          stateMutability: "payable",
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "QUESTION",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
         },
         {
           type: "function",
           name: "buyTokenWithETH",
           inputs: [
             {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
+              name: "_option",
+              type: "uint8",
+              internalType: "enum PredictionMarketChallenge.Option",
             },
             {
               name: "_amountTokenToBuy",
@@ -60,104 +66,100 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "oracle",
-          inputs: [],
+          name: "getBuyPriceInEth",
+          inputs: [
+            {
+              name: "_option",
+              type: "uint8",
+              internalType: "enum PredictionMarketChallenge.Option",
+            },
+            {
+              name: "_tradingAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
           outputs: [
             {
               name: "",
-              type: "address",
-              internalType: "address",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           stateMutability: "view",
         },
         {
           type: "function",
-          name: "owner",
-          inputs: [],
+          name: "getSellPriceInEth",
+          inputs: [
+            {
+              name: "_option",
+              type: "uint8",
+              internalType: "enum PredictionMarketChallenge.Option",
+            },
+            {
+              name: "_tradingAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
           outputs: [
             {
               name: "",
-              type: "address",
-              internalType: "address",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           stateMutability: "view",
         },
         {
           type: "function",
-          name: "prediction",
+          name: "i_initialTokenRatio",
           inputs: [],
           outputs: [
             {
-              name: "question",
-              type: "string",
-              internalType: "string",
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
             },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_optionToken1",
+          inputs: [],
+          outputs: [
             {
-              name: "option1",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "option2",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "optionToken1",
+              name: "",
               type: "address",
               internalType: "contract PredictionMarketToken",
             },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_optionToken2",
+          inputs: [],
+          outputs: [
             {
-              name: "optionToken2",
+              name: "",
               type: "address",
               internalType: "contract PredictionMarketToken",
             },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_oracle",
+          inputs: [],
+          outputs: [
             {
-              name: "tokenReserve1",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "tokenReserve2",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "winningOptionId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "isReported",
-              type: "bool",
-              internalType: "bool",
-            },
-            {
-              name: "tokenRatio",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "initialTokenAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "initialLiquidity",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "ethReserve",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "lpReserve",
-              type: "uint256",
-              internalType: "uint256",
+              name: "",
+              type: "address",
+              internalType: "address",
             },
           ],
           stateMutability: "view",
@@ -181,24 +183,76 @@ const deployedContracts = {
           inputs: [
             {
               name: "_winningOption",
-              type: "uint256",
-              internalType: "uint256",
+              type: "uint8",
+              internalType: "enum PredictionMarketChallenge.Option",
             },
           ],
           outputs: [],
           stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "s_ethCollateral",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "s_isReported",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "s_lpTradingRevenue",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "s_winningToken",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract PredictionMarketToken",
+            },
+          ],
+          stateMutability: "view",
         },
         {
           type: "function",
           name: "sellTokensForEth",
           inputs: [
             {
-              name: "_optionId",
-              type: "uint256",
-              internalType: "uint256",
+              name: "_option",
+              type: "uint8",
+              internalType: "enum PredictionMarketChallenge.Option",
             },
             {
-              name: "_tokenAmountToSell",
+              name: "_tradingAmount",
               type: "uint256",
               internalType: "uint256",
             },
@@ -207,86 +261,155 @@ const deployedContracts = {
           stateMutability: "nonpayable",
         },
         {
-          type: "function",
-          name: "sellTotalPriceInEth",
+          type: "event",
+          name: "TokensPurchased",
           inputs: [
             {
-              name: "_tokenNumber",
+              name: "buyer",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "option",
+              type: "uint8",
+              indexed: false,
+              internalType: "enum PredictionMarketChallenge.Option",
+            },
+            {
+              name: "amount",
               type: "uint256",
+              indexed: false,
               internalType: "uint256",
             },
             {
-              name: "_tradingAmount",
+              name: "ethAmount",
               type: "uint256",
+              indexed: false,
               internalType: "uint256",
             },
           ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
+          anonymous: false,
         },
         {
-          type: "function",
-          name: "totalPriceInEth",
+          type: "event",
+          name: "TokensSold",
           inputs: [
             {
-              name: "_tokenNumber",
+              name: "seller",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "option",
+              type: "uint8",
+              indexed: false,
+              internalType: "enum PredictionMarketChallenge.Option",
+            },
+            {
+              name: "amount",
               type: "uint256",
+              indexed: false,
               internalType: "uint256",
             },
             {
-              name: "_tradingAmount",
+              name: "ethAmount",
               type: "uint256",
+              indexed: false,
               internalType: "uint256",
             },
           ],
-          outputs: [
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "WinningTokensRedeemed",
+          inputs: [
             {
-              name: "",
+              name: "redeemer",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "amount",
               type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "ethAmount",
+              type: "uint256",
+              indexed: false,
               internalType: "uint256",
             },
           ],
-          stateMutability: "view",
+          anonymous: false,
         },
         {
           type: "error",
-          name: "PredictionMarket__InsufficientWinningTokens",
+          name: "PredictionMarketChallenge__AmountMustBeGreaterThanZero",
           inputs: [],
         },
         {
           type: "error",
-          name: "PredictionMarket__InvalidOption",
+          name: "PredictionMarketChallenge__ETHTransferFailed",
           inputs: [],
         },
         {
           type: "error",
-          name: "PredictionMarket__MustProvideETHForInitialLiquidity",
+          name: "PredictionMarketChallenge__InsufficientTokenReserve",
           inputs: [],
         },
         {
           type: "error",
-          name: "PredictionMarket__OnlyOracleCanReport",
+          name: "PredictionMarketChallenge__InsufficientWinningTokens",
           inputs: [],
         },
         {
           type: "error",
-          name: "PredictionMarket__PredictionAlreadyResolved",
+          name: "PredictionMarketChallenge__InvalidOption",
           inputs: [],
         },
         {
           type: "error",
-          name: "PredictionMarket__PredictionNotResolved",
+          name: "PredictionMarketChallenge__MustProvideETHForInitialLiquidity",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__MustSendExactETHAmount",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__NoTokensToRedeem",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__OnlyOracleCanReport",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__PredictionAlreadyResolved",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__PredictionNotResolved",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "PredictionMarketChallenge__TokenTransferFailed",
           inputs: [],
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1740042611.json",
+      deploymentFile: "run-1740052658.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
