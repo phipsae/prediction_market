@@ -10,13 +10,18 @@ export function PredictionMarketInfo() {
     functionName: "prediction",
   });
 
+  const { data: initialTokenAmount, isLoading: isLoadingInitialTokenAmount } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "INITIAL_TOKEN_AMOUNT",
+  });
+
   const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
-    if (_token1Reserve === undefined || _token2Reserve === undefined) return 0;
+    if (_token1Reserve === undefined || _token2Reserve === undefined || initialTokenAmount === undefined) return 0;
 
-    const token1Supply = 1000 - Number(formatEther(_token1Reserve));
-    const token2Supply = 1000 - Number(formatEther(_token2Reserve));
+    if (_token1Reserve === initialTokenAmount && _token2Reserve === initialTokenAmount) return 0.5;
 
-    if (token1Supply + token2Supply === 0) return 0;
+    const token1Supply = Number(formatEther(initialTokenAmount)) - Number(formatEther(_token1Reserve));
+    const token2Supply = Number(formatEther(initialTokenAmount)) - Number(formatEther(_token2Reserve));
 
     const option1Chance = token1Supply / (token1Supply + token2Supply);
 
