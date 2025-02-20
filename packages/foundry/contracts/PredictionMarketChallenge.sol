@@ -157,9 +157,14 @@ contract PredictionMarketChallenge {
 
         s_lpTradingRevenue -= ethToReceive;
 
+        (bool sent,) = msg.sender.call{ value: ethToReceive }("");
+        if (!sent) {
+            revert PredictionMarketChallenge__ETHTransferFailed();
+        }
+
         bool success = optionToken.transferFrom(msg.sender, address(this), _tradingAmount);
         if (!success) {
-            revert PredictionMarketChallenge__ETHTransferFailed();
+            revert PredictionMarketChallenge__TokenTransferFailed();
         }
 
         emit TokensSold(msg.sender, _option, _tradingAmount, ethToReceive);

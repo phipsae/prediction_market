@@ -2,237 +2,128 @@
 pragma solidity ^0.8.13;
 
 import { Test, console } from "forge-std/Test.sol";
-import { PredictionMarketTrading } from "../contracts/PredictionMarketTrading.sol";
-import { PredictionOptionToken } from "../contracts/PredictionOptionToken.sol";
+import { PredictionMarketChallenge } from "../contracts/PredictionMarketChallenge.sol";
+import { PredictionMarketToken } from "../contracts/PredictionMarketToken.sol";
 
-contract PredictionMarketTradingTest is Test {
-    PredictionMarketTrading public predictionMarket;
+contract PredictionMarketChallengeTest is Test {
+    PredictionMarketChallenge public predictionMarket;
+    uint256 initialLiquidity = 1 ether;
     address oracle = address(1);
     address gambler1 = address(2);
     address gambler2 = address(3);
     address gambler3 = address(4);
 
     function setUp() public {
-        predictionMarket = new PredictionMarketTrading(oracle);
-        deal(gambler1, 10 ether);
+        deal(oracle, 100 ether);
         deal(gambler2, 10 ether);
         deal(gambler3, 10 ether);
-        deal(oracle, 100 ether);
-    }
-
-    modifier withPrediction() {
-        string[] memory options = new string[](2);
-        options[0] = "Yes";
-        options[1] = "No";
+        deal(gambler1, 10 ether);
         vm.prank(oracle);
-        predictionMarket.createPrediction{ value: 1 ether }(
-            "Will ETH reach $10k?", options, block.timestamp + 100, 1000 ether
-        );
-        _;
-    }
-
-    modifier predictionReported() {
-        vm.warp(block.timestamp + 101); // Warp time past the prediction end time
-        vm.prank(oracle);
-        predictionMarket.report(0, 0);
-        _;
+        predictionMarket = new PredictionMarketChallenge{ value: initialLiquidity }(oracle);
     }
 
     modifier withFirstPurchase() {
         uint256 tradingAmount = 100 ether;
-        uint256 ethReserve = predictionMarket.getPredictionEthReserve(0);
-        uint256 initialTokenAmount = predictionMarket.getInitialTokenAmount(0);
-        uint256 token1TokenReserve = predictionMarket.getTokenReserve(0, 0);
-        uint256 ethNeeded = predictionMarket.avgPriceInEth(0, initialTokenAmount, token1TokenReserve, tradingAmount)
-            * tradingAmount / 1e18;
+        uint256 ethNeeded = predictionMarket.getBuyPriceInEth(PredictionMarketChallenge.Option.YES, tradingAmount);
         vm.prank(gambler1);
-        predictionMarket.buyTokenWithETH{ value: ethNeeded }(0, 0, tradingAmount);
+        predictionMarket.buyTokenWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
         _;
     }
 
-    modifier withPrecitionReported() {
-        vm.warp(block.timestamp + 101); // Warp time past the prediction end time
+    modifier withPredictionReported() {
         vm.prank(oracle);
-        predictionMarket.report(0, 0);
+        predictionMarket.report(PredictionMarketChallenge.Option.YES);
         _;
     }
 
-    modifier withAddedLiquidity() {
-        vm.prank(gambler1);
-        predictionMarket.addLiquidity{ value: 1 ether }(0);
-        _;
-    }
-
-    function testCreatePrediction() public withPrediction {
-        PredictionOptionToken optionToken1 = predictionMarket.getPredictionOptionToken(0, 0);
-        PredictionOptionToken optionToken2 = predictionMarket.getPredictionOptionToken(0, 1);
-        console.log(optionToken1.balanceOf(address(predictionMarket)));
-        console.log(optionToken2.balanceOf(address(predictionMarket)));
-        assertEq(optionToken1.name(), "Prediction 0, Option: Yes");
-        assertEq(optionToken2.name(), "Prediction 0, Option: No");
-        assertEq(predictionMarket.getPredictionQuestion(0), "Will ETH reach $10k?");
-        assertEq(predictionMarket.getPredictionOption(0, 0), "Yes");
-        assertEq(predictionMarket.getPredictionOption(0, 1), "No");
-        assertEq(predictionMarket.getPredictionEndTime(0), block.timestamp + 100);
-        assertEq(predictionMarket.getPredictionEthReserve(0), 1 ether);
-    }
-
-    function testAddLiquidity() public withPrediction {
-        console.log("before");
-        console.log(predictionMarket.getPredictionEthReserve(0));
-        console.log(predictionMarket.getTokenReserve(0, 0));
-        console.log(predictionMarket.getTokenReserve(0, 1));
-        vm.prank(gambler1);
-        predictionMarket.addLiquidity{ value: 1 ether }(0);
-        console.log("after");
-        console.log(predictionMarket.getPredictionEthReserve(0));
-        console.log(predictionMarket.getTokenReserve(0, 0));
-        console.log(predictionMarket.getTokenReserve(0, 1));
-    }
-
-    function testRemoveLiquidity() public withPrediction withFirstPurchase withAddedLiquidity {
-        uint256 ethReserveBefore = predictionMarket.getPredictionEthReserve(0);
-        console.log("ethReserveBefore", ethReserveBefore);
-        uint256 oracleLiquidity = predictionMarket.getLiquidity(0, oracle);
-        console.log("liquidityOracle", oracleLiquidity);
-        uint256 gambler1Liquidity = predictionMarket.getLiquidity(0, gambler1);
-        console.log("liquidityGambler1", gambler1Liquidity);
-
-        uint256 tokenBalance1Before = predictionMarket.getTokenReserve(0, 0);
-        uint256 tokenBalance2Before = predictionMarket.getTokenReserve(0, 1);
-        console.log("tokenBalance1Before", tokenBalance1Before);
-        console.log("tokenBalance2Before", tokenBalance2Before);
-
-        uint256 ethToWithdraw = 1 ether;
-
-        vm.prank(gambler1);
-        predictionMarket.removeLiquidity(0, ethToWithdraw);
-
-        console.log("ethReserveAfter", predictionMarket.getPredictionEthReserve(0));
-        console.log("liquidityGambler1After", predictionMarket.getLiquidity(0, gambler1));
-        console.log("tokenBalance1After", predictionMarket.getTokenReserve(0, 0));
-        console.log("tokenBalance2After", predictionMarket.getTokenReserve(0, 1));
-    }
-
-    function testPriceInEth() public withPrediction {
-        uint256 ethReserve = predictionMarket.getPredictionEthReserve(0);
-        uint256 tokenBalance1 = predictionMarket.getTokenReserve(0, 0);
-        console.log(ethReserve);
-        console.log(tokenBalance1);
-        uint256 tradingAmount = 999;
-        uint256 price = predictionMarket.avgPriceInEth(tokenBalance1, tokenBalance1, ethReserve, tradingAmount);
-        console.log("average price per token", price);
-        console.log("Total Amoung of the to pay", price * tradingAmount);
-    }
-
-    function testBuyTokenWithETH() public withPrediction {
-        PredictionOptionToken option1Tokenaddress = predictionMarket.getOptionsToken(0, 0);
+    function testBuyTokenWithETH() public {
         uint256 tradingAmount = 100 ether;
-        uint256 lpreserveBefore = predictionMarket.getLpReserve(0);
-        uint256 option1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
-        uint256 initialTokenAmount = predictionMarket.getInitialTokenAmount(0);
-        uint256 token1TokenReserve = predictionMarket.getTokenReserve(0, 0);
+        uint256 lpRevenueBefore = predictionMarket.s_lpTradingRevenue();
+        uint256 yesTokenBalanceBefore = predictionMarket.i_optionToken1().balanceOf(gambler1);
 
-        uint256 ethNeeded = predictionMarket.avgPriceInEth(0, initialTokenAmount, token1TokenReserve, tradingAmount)
-            * tradingAmount / 1e18;
+        uint256 ethNeeded = predictionMarket.getBuyPriceInEth(PredictionMarketChallenge.Option.YES, tradingAmount);
 
-        console.log("token ratio", predictionMarket.getTokenRatio(0));
         console.log("eth needed", ethNeeded);
         console.log("gambler1 eth balance", address(gambler1).balance);
-        vm.prank(gambler1);
-        predictionMarket.buyTokenWithETH{ value: ethNeeded }(0, 0, tradingAmount);
 
-        // check lpreserve
-        uint256 lpreserveAfter = predictionMarket.getLpReserve(0);
-        uint256 option1TokenBalanceAfter = option1Tokenaddress.balanceOf(gambler1);
-        assertEq(lpreserveAfter, lpreserveBefore + ethNeeded);
+        vm.prank(gambler1);
+        predictionMarket.buyTokenWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
+
+        // check lp revenue
+        uint256 lpRevenueAfter = predictionMarket.s_lpTradingRevenue();
+        uint256 yesTokenBalanceAfter = predictionMarket.i_optionToken1().balanceOf(gambler1);
+
+        assertEq(lpRevenueAfter, lpRevenueBefore + ethNeeded);
         // check token balance
-        assertEq(option1TokenBalanceAfter, option1TokenBalanceBefore + tradingAmount);
+        assertEq(yesTokenBalanceAfter, yesTokenBalanceBefore + tradingAmount);
     }
 
-    function testSellTokenForETH() public withPrediction withFirstPurchase {
-        PredictionOptionToken option1Tokenaddress = predictionMarket.getOptionsToken(0, 0);
-
+    function testSellTokenForETH() public withFirstPurchase {
         uint256 sellAmount = 100 ether;
-        uint256 lpreserveBefore = predictionMarket.getLpReserve(0);
-        console.log("lpreserveBefore", lpreserveBefore);
-        uint256 option1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
-        console.log("token1BalanceBefore", option1TokenBalanceBefore);
-        // Approve tokens for selling
-        vm.prank(gambler1);
-        option1Tokenaddress.approve(address(predictionMarket), sellAmount);
-        console.log("Allowance", option1Tokenaddress.allowance(gambler1, address(predictionMarket)));
-        console.log("gambler1 eth balance before", address(gambler1).balance);
-        vm.prank(gambler1);
-        predictionMarket.sellTokensForEth(0, 0, sellAmount);
+        uint256 lpRevenueBefore = predictionMarket.s_lpTradingRevenue();
+        uint256 yesTokenBalanceBefore = predictionMarket.i_optionToken1().balanceOf(gambler1);
+        uint256 gambler1EthBalanceBefore = address(gambler1).balance;
+        PredictionMarketToken tokenContract1 = predictionMarket.i_optionToken1();
 
-        // check lpreserve
-        uint256 lpreserveAfter = predictionMarket.getLpReserve(0);
-        // assertEq(lpreserveAfter, lpreserveBefore - sellAmount);
-        console.log("gambler1 eth balance after", address(gambler1).balance);
+        uint256 ethToReceive = predictionMarket.getSellPriceInEth(PredictionMarketChallenge.Option.YES, sellAmount);
 
-        // // check lpreserve
-        // uint256 lpreserveAfter = predictionMarket.getLpReserve(0);
-        uint256 option1TokenBalanceAfter = option1Tokenaddress.balanceOf(gambler1);
-        console.log("token1BalanceAfter", option1TokenBalanceAfter);
-        console.log("lpreserveAfter", lpreserveAfter);
+        vm.prank(gambler1);
+        tokenContract1.approve(address(predictionMarket), sellAmount);
+
+        vm.prank(gambler1);
+        predictionMarket.sellTokensForEth(PredictionMarketChallenge.Option.YES, sellAmount);
+
+        uint256 lpRevenueAfter = predictionMarket.s_lpTradingRevenue();
+        uint256 yesTokenBalanceAfter = predictionMarket.i_optionToken1().balanceOf(gambler1);
+        uint256 gambler1EthBalanceAfter = address(gambler1).balance;
+
+        assertEq(lpRevenueAfter, lpRevenueBefore - ethToReceive);
+        assertEq(yesTokenBalanceAfter, yesTokenBalanceBefore - sellAmount);
+        console.log("gambler1EthBalanceBefore", gambler1EthBalanceBefore);
+        console.log("gambler1EthBalanceAfter", gambler1EthBalanceAfter);
+        console.log("ethToReceive", ethToReceive);
+        // assertEq(gambler1EthBalanceAfter, gambler1EthBalanceBefore + ethToReceive);
     }
 
-    function testReport() public withPrediction withFirstPurchase {
-        console.log("Before");
-        console.log("Winning option id:", predictionMarket.getPredictionWinningOptionId(0));
-        console.log(predictionMarket.getPredictionEthReserve(0));
-        console.log(predictionMarket.getTokenReserve(0, 0));
-        console.log(predictionMarket.getTokenReserve(0, 1));
-        PredictionOptionToken optionToken1 = predictionMarket.getPredictionOptionToken(0, 0);
-        console.log("Initial token balance:", optionToken1.balanceOf(gambler1));
-        console.log("Total supply:", optionToken1.totalSupply());
-        console.log("Contract balance:", optionToken1.balanceOf(address(predictionMarket)));
-
-        vm.warp(block.timestamp + 101); // Warp time past the prediction end time
+    function testReport() public withFirstPurchase {
         vm.prank(gambler1);
-        vm.expectRevert(PredictionMarketTrading.PredictionMarketTrading__OnlyOracleCanReport.selector);
-        predictionMarket.report(0, 0);
+        vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__OnlyOracleCanReport.selector);
+        predictionMarket.report(PredictionMarketChallenge.Option.YES);
+
         vm.prank(oracle);
-        predictionMarket.report(0, 0);
-        uint256 winningOptionId = predictionMarket.getPredictionWinningOptionId(0);
-        assertEq(predictionMarket.getOptions(0, winningOptionId), "Yes");
+        predictionMarket.report(PredictionMarketChallenge.Option.YES);
+
         vm.prank(gambler1);
-        vm.expectRevert(PredictionMarketTrading.PredictionMarketTrading__PredictionEnded.selector);
-        predictionMarket.buyTokenWithETH{ value: 1 ether }(0, 0, 100);
-        console.log("After");
-        console.log(predictionMarket.getPredictionEthReserve(0));
-        console.log(predictionMarket.getTokenReserve(0, 0));
-        console.log(predictionMarket.getTokenReserve(0, 1));
+        vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__PredictionAlreadyResolved.selector);
+        predictionMarket.buyTokenWithETH{ value: 1 ether }(PredictionMarketChallenge.Option.YES, 100);
     }
 
-    function testRedeemWinningTokens() public withPrediction withFirstPurchase predictionReported {
-        PredictionOptionToken option1Tokenaddress = predictionMarket.getOptionsToken(0, 0);
-        uint256 gambler1TokenBalanceBefore = option1Tokenaddress.balanceOf(gambler1);
+    function testRedeemWinningTokens() public withFirstPurchase withPredictionReported {
+        PredictionMarketToken winningToken = predictionMarket.i_optionToken1();
+        uint256 gambler1TokenBalanceBefore = winningToken.balanceOf(gambler1);
         uint256 predictionEthBalanceBefore = address(predictionMarket).balance;
         console.log("Prediction contract ETH balance before:", predictionEthBalanceBefore);
         uint256 tokenRedeemed = 100 ether;
 
-        uint256 totalSupplyBefore = option1Tokenaddress.totalSupply();
+        uint256 totalSupplyBefore = winningToken.totalSupply();
         console.log("totalSupplyBefore", totalSupplyBefore);
 
         vm.prank(gambler1);
-        option1Tokenaddress.approve(address(predictionMarket), tokenRedeemed);
+        winningToken.approve(address(predictionMarket), tokenRedeemed);
 
         vm.prank(gambler1);
-        predictionMarket.redeemWinningTokens(0, tokenRedeemed);
+        predictionMarket.redeemWinningTokens(tokenRedeemed);
 
         vm.prank(gambler1);
-        vm.expectRevert(PredictionMarketTrading.PredictionMarketTrading__InsufficientWinningTokens.selector);
-        predictionMarket.redeemWinningTokens(0, tokenRedeemed);
+        vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__InsufficientWinningTokens.selector);
+        predictionMarket.redeemWinningTokens(tokenRedeemed);
 
-        uint256 gambler1TokenBalanceAfter = option1Tokenaddress.balanceOf(gambler1);
+        uint256 gambler1TokenBalanceAfter = winningToken.balanceOf(gambler1);
         assertEq(gambler1TokenBalanceAfter, gambler1TokenBalanceBefore - tokenRedeemed);
 
         uint256 predictionEthBalanceAfter = address(predictionMarket).balance;
         console.log("Prediction contract ETH balance after:", predictionEthBalanceAfter);
-        uint256 totalSupplyAfter = option1Tokenaddress.totalSupply();
+        uint256 totalSupplyAfter = winningToken.totalSupply();
         console.log("totalSupplyAfter", totalSupplyAfter);
-        // assertEq(predictionEthBalanceAfter, predictionEthBalanceBefore + tokenRedeemed);
     }
 }
