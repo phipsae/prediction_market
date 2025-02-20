@@ -94,7 +94,7 @@ contract PredictionMarketChallenge {
      * @param _option The option (YES or NO) to buy tokens for
      * @param _amountTokenToBuy Amount of tokens to purchase
      */
-    function buyTokenWithETH(Option _option, uint256 _amountTokenToBuy)
+    function buyTokensWithETH(Option _option, uint256 _amountTokenToBuy)
         external
         payable
         onlyPredictionOpen

@@ -26,7 +26,7 @@ contract PredictionMarketChallengeTest is Test {
         uint256 tradingAmount = 100 ether;
         uint256 ethNeeded = predictionMarket.getBuyPriceInEth(PredictionMarketChallenge.Option.YES, tradingAmount);
         vm.prank(gambler1);
-        predictionMarket.buyTokenWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
+        predictionMarket.buyTokensWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
         _;
     }
 
@@ -47,7 +47,7 @@ contract PredictionMarketChallengeTest is Test {
         console.log("gambler1 eth balance", address(gambler1).balance);
 
         vm.prank(gambler1);
-        predictionMarket.buyTokenWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
+        predictionMarket.buyTokensWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
 
         // check lp revenue
         uint256 lpRevenueAfter = predictionMarket.s_lpTradingRevenue();
