@@ -7,8 +7,10 @@ import { formatEther, parseEther } from "viem";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionIndex: number; colorScheme: string }) {
-  const [inputAmount, setInputAmount] = useState<bigint>(BigInt(0));
-  const tokenAmount = parseEther((inputAmount || BigInt(0)).toString());
+  const [inputBuyAmount, setInputBuyAmount] = useState<bigint>(BigInt(0));
+  const tokenBuyAmount = parseEther((inputBuyAmount || BigInt(0)).toString());
+  const [inputSellAmount, setInputSellAmount] = useState<bigint>(BigInt(0));
+  const tokenSellAmount = parseEther((inputSellAmount || BigInt(0)).toString());
 
   const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
   const contractAddress = deployedContractData?.address;
@@ -25,14 +27,14 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
   const { data: totalPriceInEth } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",
     functionName: "getBuyPriceInEth",
-    args: [optionIndex, tokenAmount],
+    args: [optionIndex, tokenBuyAmount],
     watch: true,
   });
 
   const { data: sellTotalPriceInEth } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",
     functionName: "getSellPriceInEth",
-    args: [optionIndex, tokenAmount],
+    args: [optionIndex, tokenSellAmount],
     watch: true,
   });
 
@@ -66,7 +68,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
               type="number"
               placeholder="Amount to buy"
               className={`input input-bordered input-sm w-full border-${colorScheme}-200 focus:border-${colorScheme}-500`}
-              onChange={e => setInputAmount(BigInt(e.target.value))}
+              onChange={e => setInputBuyAmount(BigInt(e.target.value))}
             />
 
             {totalPriceInEth && (
@@ -80,7 +82,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
                 try {
                   await writeYourContractAsync({
                     functionName: "buyTokensWithETH",
-                    args: [optionIndex, tokenAmount],
+                    args: [optionIndex, tokenBuyAmount],
                     value: totalPriceInEth,
                   });
                 } catch (e) {
@@ -106,7 +108,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
               type="number"
               placeholder="Amount to sell"
               className={`input input-bordered input-sm w-full border-${colorScheme}-200 focus:border-${colorScheme}-500`}
-              onChange={e => setInputAmount(BigInt(e.target.value))}
+              onChange={e => setInputSellAmount(BigInt(e.target.value))}
             />
 
             {sellTotalPriceInEth && (
@@ -121,7 +123,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
                 try {
                   await writeYourContractAsync({
                     functionName: "sellTokensForEth",
-                    args: [optionIndex, tokenAmount],
+                    args: [optionIndex, tokenSellAmount],
                   });
                 } catch (e) {
                   console.error("Error selling tokens:", e);
