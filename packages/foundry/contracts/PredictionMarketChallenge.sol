@@ -266,23 +266,6 @@ contract PredictionMarketChallenge {
     /// Getter Functions ///
     ////////////////////////
 
-    /**
-     * @notice Get all prediction market variables in a single call
-     * @return question The prediction market question
-     * @return outcome1 The YES token name
-     * @return outcome2 The NO token name
-     * @return oracle The oracle address
-     * @return initialTokenRatio The initial token ratio
-     * @return token1Reserve The current YES token reserve
-     * @return token2Reserve The current NO token reserve
-     * @return winningOptionId 0 for YES, 1 for NO (only valid if reported)
-     * @return isReported Whether the prediction has been reported
-     * @return optionToken1 The YES token contract address
-     * @return optionToken2 The NO token contract address
-     * @return winningToken The winning token contract address (only valid if reported)
-     * @return ethCollateral The ETH collateral pool
-     * @return lpTradingRevenue The accumulated LP trading fees
-     */
     function prediction()
         external
         view
@@ -294,7 +277,7 @@ contract PredictionMarketChallenge {
             uint256 initialTokenRatio,
             uint256 token1Reserve,
             uint256 token2Reserve,
-            uint256 winningOptionId,
+            address winningTokenAddress,
             bool isReported,
             address optionToken1,
             address optionToken2,
@@ -310,7 +293,7 @@ contract PredictionMarketChallenge {
         initialTokenRatio = i_initialTokenRatio;
         token1Reserve = i_optionToken1.balanceOf(address(this));
         token2Reserve = i_optionToken2.balanceOf(address(this));
-        winningOptionId = s_winningToken == i_optionToken1 ? 0 : 1;
+        winningTokenAddress = address(s_winningToken);
         isReported = s_isReported;
         optionToken1 = address(i_optionToken1);
         optionToken2 = address(i_optionToken2);
