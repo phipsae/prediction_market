@@ -8,6 +8,7 @@ import { PredictionMarketToken } from "../contracts/PredictionMarketToken.sol";
 contract PredictionMarketChallengeTest is Test {
     PredictionMarketChallenge public predictionMarket;
     uint256 initialLiquidity = 10 ether;
+    uint256 initialTokenValue = 0.01 ether;
     address oracle = address(1);
     address gambler1 = address(2);
     address gambler2 = address(3);
@@ -21,7 +22,7 @@ contract PredictionMarketChallengeTest is Test {
         deal(gambler1, 10 ether);
         vm.prank(oracle);
         predictionMarket = new PredictionMarketChallenge{ value: initialLiquidity }(
-            oracle, "Will ETH reach 20k by the end of the year 2025"
+            oracle, "Will ETH reach 20k by the end of the year 2025", initialTokenValue
         );
     }
 
@@ -144,8 +145,8 @@ contract PredictionMarketChallengeTest is Test {
         uint256 token2BalanceAfter = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
 
         assertEq(ethCollateralAfter, ethCollateralBefore + addAmount);
-        assertEq(token1BalanceAfter, token1BalanceBefore + (addAmount * predictionMarket.i_initialTokenRatio()));
-        assertEq(token2BalanceAfter, token2BalanceBefore + (addAmount * predictionMarket.i_initialTokenRatio()));
+        assertEq(token1BalanceAfter, token1BalanceBefore + (addAmount * predictionMarket.i_initialTokenValue()));
+        assertEq(token2BalanceAfter, token2BalanceBefore + (addAmount * predictionMarket.i_initialTokenValue()));
 
         // Test can't add liquidity after prediction is resolved
         vm.prank(oracle);
@@ -163,7 +164,7 @@ contract PredictionMarketChallengeTest is Test {
         uint256 token2BalanceBefore = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
         uint256 oracleBalanceBefore = address(oracle).balance;
 
-        uint256 tokensToBurn = removeAmount * predictionMarket.i_initialTokenRatio() / (PRECISION * PRECISION);
+        uint256 tokensToBurn = removeAmount * predictionMarket.i_initialTokenValue() / PRECISION;
 
         vm.prank(oracle);
         predictionMarket.removeLiquidity(removeAmount);

@@ -34,11 +34,10 @@ contract PredictionMarketChallenge is Ownable {
     }
 
     uint256 private constant PRECISION = 1e18;
-    uint256 public constant INITIAL_TOKEN_AMOUNT = 1000 ether;
 
     address public immutable i_oracle; // is owner of contract as well
     // TODO: add owner of contract
-    uint256 public immutable i_initialTokenRatio;
+    uint256 public immutable i_initialTokenValue;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
 
@@ -78,17 +77,19 @@ contract PredictionMarketChallenge is Ownable {
     /// Functions ///
     /////////////////
 
-    constructor(address _oracle, string memory _question) payable Ownable(msg.sender) {
-        i_oracle = _oracle;
-        i_question = _question;
+    constructor(address _oracle, string memory _question, uint256 _initialTokenValue) payable Ownable(msg.sender) {
         if (msg.value <= 0) {
             revert PredictionMarketChallenge__MustProvideETHForInitialLiquidity();
         }
-
+        i_oracle = _oracle;
+        i_question = _question;
+        i_initialTokenValue = _initialTokenValue;
         s_ethCollateral = msg.value;
-        i_initialTokenRatio = (msg.value * PRECISION * PRECISION) / INITIAL_TOKEN_AMOUNT;
-        i_optionToken1 = new PredictionMarketToken("Yes", "Y", INITIAL_TOKEN_AMOUNT);
-        i_optionToken2 = new PredictionMarketToken("No", "N", INITIAL_TOKEN_AMOUNT);
+
+        uint256 initialTokenRatio = (msg.value * PRECISION) / _initialTokenValue;
+
+        i_optionToken1 = new PredictionMarketToken("Yes", "Y", initialTokenRatio);
+        i_optionToken2 = new PredictionMarketToken("No", "N", initialTokenRatio);
     }
 
     /**
@@ -242,8 +243,8 @@ contract PredictionMarketChallenge is Ownable {
         }
         s_ethCollateral += msg.value;
 
-        i_optionToken1.mint(address(this), msg.value * i_initialTokenRatio);
-        i_optionToken2.mint(address(this), msg.value * i_initialTokenRatio);
+        i_optionToken1.mint(address(this), msg.value * i_initialTokenValue);
+        i_optionToken2.mint(address(this), msg.value * i_initialTokenValue);
     }
 
     /**
@@ -251,7 +252,7 @@ contract PredictionMarketChallenge is Ownable {
      * @param _ethToWithdraw Amount of ETH to withdraw from liquidity pool
      */
     function removeLiquidity(uint256 _ethToWithdraw) external onlyOwner {
-        uint256 amountTokenToBurn = _ethToWithdraw * i_initialTokenRatio / (PRECISION * PRECISION);
+        uint256 amountTokenToBurn = _ethToWithdraw * i_initialTokenValue / PRECISION;
 
         if (amountTokenToBurn > (i_optionToken1.balanceOf(address(this)))) {
             revert PredictionMarketChallenge__InsufficientTokenReserve();
@@ -285,35 +286,40 @@ contract PredictionMarketChallenge is Ownable {
         view
         returns (uint256)
     {
+        /// Amount of unsold tokens contract holds
         uint256 currentTokenReserve =
             _option == Option.YES ? i_optionToken1.balanceOf(address(this)) : i_optionToken2.balanceOf(address(this));
         uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
         uint256 currentOtherTokenReserve =
             _option == Option.YES ? i_optionToken2.balanceOf(address(this)) : i_optionToken1.balanceOf(address(this));
 
-        uint256 currentOtherTokenSupply = INITIAL_TOKEN_AMOUNT - currentOtherTokenReserve;
-        uint256 currentTokenSupply = INITIAL_TOKEN_AMOUNT - currentTokenReserve;
-        uint256 newSupply = INITIAL_TOKEN_AMOUNT - newReserve;
+        /// is the same for both tokens
+        uint256 totalTokenSupply = i_optionToken1.totalSupply();
+
+        uint256 currentTokenSold = totalTokenSupply - currentTokenReserve;
+        uint256 currentOtherTokenSold = totalTokenSupply - currentOtherTokenReserve;
+
+        uint256 newSupply = totalTokenSupply - newReserve;
 
         uint256 probabilityStart;
 
-        if (currentTokenSupply + currentOtherTokenSupply == 0) {
+        if (currentTokenSold + currentOtherTokenSold == 0) {
             probabilityStart = PRECISION / 2;
         } else {
-            probabilityStart = (currentTokenSupply * PRECISION) / (currentTokenSupply + currentOtherTokenSupply);
+            probabilityStart = (currentTokenSold * PRECISION) / (currentTokenSold + currentOtherTokenSold);
         }
 
         uint256 probabilityEnd;
 
-        if (newSupply + currentOtherTokenSupply == 0) {
+        if (newSupply + currentOtherTokenSold == 0) {
             probabilityEnd = PRECISION / 2;
         } else {
-            probabilityEnd = (newSupply * PRECISION) / (newSupply + currentOtherTokenSupply);
+            probabilityEnd = (newSupply * PRECISION) / (newSupply + currentOtherTokenSold);
         }
 
         uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
 
-        uint256 avg = (i_initialTokenRatio * probabilityAvg) / PRECISION / PRECISION;
+        uint256 avg = (i_initialTokenValue * probabilityAvg) / PRECISION;
         return (avg * _tradingAmount) / PRECISION;
     }
 
@@ -329,7 +335,7 @@ contract PredictionMarketChallenge is Ownable {
             string memory outcome1,
             string memory outcome2,
             address oracle,
-            uint256 initialTokenRatio,
+            uint256 initialTokenValue,
             uint256 token1Reserve,
             uint256 token2Reserve,
             bool isReported,
@@ -344,7 +350,7 @@ contract PredictionMarketChallenge is Ownable {
         outcome1 = i_optionToken1.name();
         outcome2 = i_optionToken2.name();
         oracle = i_oracle;
-        initialTokenRatio = i_initialTokenRatio;
+        initialTokenValue = i_initialTokenValue;
         token1Reserve = i_optionToken1.balanceOf(address(this));
         token2Reserve = i_optionToken2.balanceOf(address(this));
         isReported = s_isReported;
