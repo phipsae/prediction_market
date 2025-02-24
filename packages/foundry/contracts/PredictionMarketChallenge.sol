@@ -1,75 +1,73 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { PredictionOptionToken } from "./PredictionOptionToken.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { console } from "forge-std/console.sol";
+import { PredictionMarketToken } from "./PredictionMarketToken.sol";
 
-// TODO: ownable, reentrancy guard, fallback, receive
-contract PredictionMarketTradingWOTime {
-    using Strings for uint256;
-
+contract PredictionMarketChallenge {
     /////////////////
     /// Errors //////
     /////////////////
 
-    error PredictionMarketTrading__OnlyOracleCanCreatePredictions();
-    error PredictionMarketTrading__NeedExactlyTwoOptions();
-    error PredictionMarketTrading__MustProvideETHForInitialLiquidity();
-    error PredictionMarketTrading__InvalidOption();
-    error PredictionMarketTrading__PredictionAlreadyResolved();
-    error PredictionMarketTrading__OnlyOracleCanReport();
-    error PredictionMarketTrading__PredictionNotResolved();
-    error PredictionMarketTrading__InvalidWinningOption();
-    error PredictionMarketTrading__InsufficientWinningTokens();
-    error PredictionMarketTrading__NoLiquidityToRemove();
-    error PredictionMarketTrading__InsufficientLiquidity();
+    error PredictionMarketChallenge__MustProvideETHForInitialLiquidity();
+    error PredictionMarketChallenge__InvalidOption();
+    error PredictionMarketChallenge__PredictionAlreadyResolved();
+    error PredictionMarketChallenge__OnlyOracleCanReport();
+    error PredictionMarketChallenge__PredictionNotResolved();
+    error PredictionMarketChallenge__InsufficientWinningTokens();
+    error PredictionMarketChallenge__AmountMustBeGreaterThanZero();
+    error PredictionMarketChallenge__MustSendExactETHAmount();
+    error PredictionMarketChallenge__InsufficientTokenReserve();
+    error PredictionMarketChallenge__TokenTransferFailed();
+    error PredictionMarketChallenge__NoTokensToRedeem();
+    error PredictionMarketChallenge__ETHTransferFailed();
+    error PredictionMarketChallenge__InsufficientBalance(uint256 _tradingAmount, uint256 _userBalance);
+    error PredictionMarketChallenge__InsufficientAllowance(uint256 _tradingAmount, uint256 _allowance);
 
     //////////////////////////
     /// State Variables //////
     //////////////////////////
 
-    struct Prediction {
-        string question;
-        mapping(uint256 => string) options;
-        mapping(uint256 => PredictionOptionToken) optionTokens; // tracks token addresses
-        mapping(uint256 => uint256) tokenReserves; // amount of tokens in the pool
-        uint256 winningOptionId;
-        bool isReported;
-        uint256 tokenRatio;
-        uint256 initialTokenAmount; // per option --> to calculate the percentage of each token
-        uint256 initialLiquidity; // when prediciton is opened --> to calculate the percentage of each token
-        uint256 ethReserve; // eth pot which get's later distributed to winners
-        uint256 lpReserve; // fees which get's later distributed to liquidity providers, TODO: find better word
-        mapping(address => uint256) liquidity; // amount of liquidity added by each LP
+    enum Option {
+        YES,
+        NO
     }
 
     uint256 private constant PRECISION = 1e18;
-    uint256 private constant OPTIONS_COUNT = 2;
-    uint256 public s_nextPredictionId = 0;
-    address public s_oracle;
+    uint256 public constant INITIAL_TOKEN_AMOUNT = 1000 ether;
 
-    mapping(uint256 => Prediction) private s_predictions;
+    address public immutable i_oracle; // is owner of contract as well
+    uint256 public immutable i_initialTokenRatio;
+    PredictionMarketToken public immutable i_optionToken1;
+    PredictionMarketToken public immutable i_optionToken2;
+
+    string public i_question;
+    PredictionMarketToken public s_winningToken;
+    bool public s_isReported;
+    uint256 public s_ethCollateral; // used to be ethReserve; eth pot which get's later distributed to winners
+    uint256 public s_lpTradingRevenue; // used to be lpReserve; fees which get's later distributed to liquidity providers, TODO: find better word
 
     /////////////////////////
     /// Events //////
     /////////////////////////
 
-    // TODO: implement events
+    event TokensPurchased(address indexed buyer, Option option, uint256 amount, uint256 ethAmount);
+    event TokensSold(address indexed seller, Option option, uint256 amount, uint256 ethAmount);
+    event WinningTokensRedeemed(address indexed redeemer, uint256 amount, uint256 ethAmount);
 
     /////////////////
     /// Modifiers ///
     /////////////////
 
-    modifier onlyWhenPredictionOpen(uint256 _predictionId, uint256 _optionId) {
-        Prediction storage prediction = s_predictions[_predictionId];
-
-        if (_optionId >= OPTIONS_COUNT) {
-            revert PredictionMarketTrading__InvalidOption();
+    modifier onlyPredictionOpen() {
+        if (s_isReported) {
+            revert PredictionMarketChallenge__PredictionAlreadyResolved();
         }
-        if (prediction.isReported) {
-            revert PredictionMarketTrading__PredictionAlreadyResolved();
+        _;
+    }
+
+    modifier withValidOption(Option _option) {
+        if (_option != Option.YES && _option != Option.NO) {
+            revert PredictionMarketChallenge__InvalidOption();
         }
         _;
     }
@@ -78,353 +76,258 @@ contract PredictionMarketTradingWOTime {
     /// Functions ///
     /////////////////
 
-    constructor(address _oracle) {
-        s_oracle = _oracle;
-    }
-
-    /**
-     * @notice Create a new prediction market with initial liquidity
-     * @param _question The question being predicted
-     * @param _options Array of possible outcomes (must be exactly 2)
-     * @param _initialTokenAmount Amount of tokens to mint per option
-     */
-    function createPrediction(string calldata _question, string[] calldata _options, uint256 _initialTokenAmount)
-        external
-        payable
-    {
-        if (msg.sender != s_oracle) {
-            revert PredictionMarketTrading__OnlyOracleCanCreatePredictions();
-        }
-        if (_options.length != OPTIONS_COUNT) {
-            revert PredictionMarketTrading__NeedExactlyTwoOptions();
-        }
+    constructor(address _oracle, string memory _question) payable {
+        i_oracle = _oracle;
+        i_question = _question;
         if (msg.value <= 0) {
-            revert PredictionMarketTrading__MustProvideETHForInitialLiquidity();
+            revert PredictionMarketChallenge__MustProvideETHForInitialLiquidity();
         }
 
-        Prediction storage prediction = s_predictions[s_nextPredictionId];
-        prediction.question = _question;
-        prediction.ethReserve = msg.value;
-        prediction.liquidity[msg.sender] += msg.value;
-        prediction.initialTokenAmount = _initialTokenAmount;
-        prediction.initialLiquidity = msg.value;
-        prediction.tokenRatio = (_initialTokenAmount * PRECISION * PRECISION) / msg.value;
-        // Create tokens for each option and initialize liquidity
-        for (uint256 i = 0; i < _options.length; i++) {
-            prediction.options[i] = _options[i];
+        s_ethCollateral = msg.value;
+        i_initialTokenRatio = (msg.value * PRECISION * PRECISION) / INITIAL_TOKEN_AMOUNT;
 
-            // Create new token for this option
-            string memory tokenName =
-                string(abi.encodePacked("Prediction ", s_nextPredictionId.toString(), ", Option: ", _options[i]));
-            string memory tokenSymbol = string(abi.encodePacked(s_nextPredictionId.toString(), "-", i.toString()));
-            PredictionOptionToken newToken = new PredictionOptionToken(tokenName, tokenSymbol, s_nextPredictionId);
-
-            prediction.optionTokens[i] = newToken;
-
-            // Mint initial tokens and set up liquidity
-            uint256 initialTokens = _initialTokenAmount;
-            newToken.mint(address(this), initialTokens);
-            prediction.tokenReserves[i] = initialTokens;
-        }
-        s_nextPredictionId++;
+        i_optionToken1 = new PredictionMarketToken("Yes", "Y", INITIAL_TOKEN_AMOUNT);
+        i_optionToken2 = new PredictionMarketToken("No", "N", INITIAL_TOKEN_AMOUNT);
     }
 
     /**
-     * @notice Buy prediction outcome tokens with ETH,  need to call priceInETH function first to get right amount of tokens to buy
-     * @param _predictionId ID of the prediction market
-     * @param _optionId ID of the option to buy tokens for (0 or 1)
+     * @notice Buy prediction outcome tokens with ETH, need to call priceInETH function first to get right amount of tokens to buy
+     * @param _option The option (YES or NO) to buy tokens for
      * @param _amountTokenToBuy Amount of tokens to purchase
      */
-    function buyTokenWithETH(uint256 _predictionId, uint256 _optionId, uint256 _amountTokenToBuy)
+    function buyTokensWithETH(Option _option, uint256 _amountTokenToBuy)
         external
         payable
-        onlyWhenPredictionOpen(_predictionId, _optionId)
+        onlyPredictionOpen
+        withValidOption(_option)
     {
-        Prediction storage prediction = s_predictions[_predictionId];
-        uint256 initialTokenAmount = prediction.initialTokenAmount;
-        uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
+        if (_amountTokenToBuy == 0) {
+            revert PredictionMarketChallenge__AmountMustBeGreaterThanZero();
+        }
 
-        // Calculate eth need to buy amount of tokens
-        uint256 avgPrice = avgPriceInEth(_predictionId, initialTokenAmount, currentTokenReserve, _amountTokenToBuy);
+        uint256 ethNeeded = getBuyPriceInEth(_option, _amountTokenToBuy);
+        if (msg.value != ethNeeded) {
+            revert PredictionMarketChallenge__MustSendExactETHAmount();
+        }
 
-        uint256 ethNeeded = avgPrice * _amountTokenToBuy / PRECISION;
+        PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
 
-        require(msg.value == ethNeeded, "Must send right amount of ETH");
+        if (_amountTokenToBuy > i_optionToken1.balanceOf(address(this))) {
+            revert PredictionMarketChallenge__InsufficientTokenReserve();
+        }
 
-        prediction.tokenReserves[_optionId] -= _amountTokenToBuy;
-        prediction.lpReserve += msg.value;
+        s_lpTradingRevenue += msg.value;
 
-        prediction.optionTokens[_optionId].transfer(msg.sender, _amountTokenToBuy);
+        bool success = optionToken.transfer(msg.sender, _amountTokenToBuy);
+        if (!success) {
+            revert PredictionMarketChallenge__TokenTransferFailed();
+        }
+
+        emit TokensPurchased(msg.sender, _option, _amountTokenToBuy, msg.value);
     }
 
     /**
-     * @notice Sell prediction outcome tokens for ETH,  need to call priceInETH function first to get right amount of tokens to buy
-     * @param _predictionId ID of the prediction market
-     * @param _optionId ID of the option to sell tokens for (0 or 1)
-     * @param _tokenAmountToSell Amount of tokens to sell
+     * @notice Sell prediction outcome tokens for ETH, need to call priceInETH function first to get right amount of tokens to buy
+     * @param _option The option (YES or NO) to sell tokens for
+     * @param _tradingAmount The amount of tokens to sell
      */
-    function sellTokensForEth(uint256 _predictionId, uint256 _optionId, uint256 _tokenAmountToSell)
+    function sellTokensForEth(Option _option, uint256 _tradingAmount)
         external
-        onlyWhenPredictionOpen(_predictionId, _optionId)
+        onlyPredictionOpen
+        withValidOption(_option)
     {
-        Prediction storage prediction = s_predictions[_predictionId];
+        if (_tradingAmount == 0) {
+            revert PredictionMarketChallenge__AmountMustBeGreaterThanZero();
+        }
 
-        uint256 initialTokenAmount = prediction.initialTokenAmount;
-        uint256 currentTokenReserve = prediction.tokenReserves[_optionId];
+        uint256 ethToReceive = getSellPriceInEth(_option, _tradingAmount);
 
-        uint256 avgPrice = sellAvgPriceInEth(_predictionId, initialTokenAmount, currentTokenReserve, _tokenAmountToSell);
+        PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
 
-        uint256 ethToReceive = avgPrice * _tokenAmountToSell / PRECISION;
+        uint256 userBalance = optionToken.balanceOf(msg.sender);
+        if (userBalance < _tradingAmount) {
+            revert PredictionMarketChallenge__InsufficientBalance(_tradingAmount, userBalance);
+        }
 
-        prediction.tokenReserves[_optionId] += _tokenAmountToSell;
-        prediction.lpReserve -= ethToReceive;
+        uint256 allowance = optionToken.allowance(msg.sender, address(this));
+        if (allowance < _tradingAmount) {
+            revert PredictionMarketChallenge__InsufficientAllowance(_tradingAmount, allowance);
+        }
 
-        prediction.optionTokens[_optionId].transferFrom(msg.sender, address(this), _tokenAmountToSell);
+        s_lpTradingRevenue -= ethToReceive;
 
-        (bool success,) = msg.sender.call{ value: ethToReceive }("");
-        require(success, "ETH transfer failed");
+        (bool sent,) = msg.sender.call{ value: ethToReceive }("");
+        if (!sent) {
+            revert PredictionMarketChallenge__ETHTransferFailed();
+        }
+
+        bool success = optionToken.transferFrom(msg.sender, address(this), _tradingAmount);
+        if (!success) {
+            revert PredictionMarketChallenge__TokenTransferFailed();
+        }
+
+        emit TokensSold(msg.sender, _option, _tradingAmount, ethToReceive);
     }
 
-    // function to report the winning option
-    function report(uint256 _predictionId, uint256 _winningOption) external {
-        if (msg.sender != s_oracle) {
-            revert PredictionMarketTrading__OnlyOracleCanReport();
-        }
-        Prediction storage prediction = s_predictions[_predictionId];
-        if (_winningOption >= OPTIONS_COUNT) {
-            revert PredictionMarketTrading__InvalidWinningOption();
+    /**
+     * @notice Report the winning option for the prediction
+     * @param _winningOption The winning option (YES or NO)
+     */
+    function report(Option _winningOption) external onlyPredictionOpen withValidOption(_winningOption) {
+        if (msg.sender != i_oracle) {
+            revert PredictionMarketChallenge__OnlyOracleCanReport();
         }
         // Set winning option
-        prediction.winningOptionId = _winningOption;
-        prediction.isReported = true;
+        s_winningToken = _winningOption == Option.YES ? i_optionToken1 : i_optionToken2;
+        s_isReported = true;
     }
 
-    /// TODO: would be proably nice to have some kind of burn mechanism for the tokens with no value left
-    // Function for winners to claim their ETH
-    function redeemWinningTokens(uint256 _predictionId, uint256 _amount) external {
-        Prediction storage prediction = s_predictions[_predictionId];
+    /**
+     * @notice Redeem winning tokens for ETH after prediction is resolved, winning tokens are burned and user receives ETH
+     * @param _amount The amount of winning tokens to redeem
+     */
+    function redeemWinningTokens(uint256 _amount) external {
+        if (_amount == 0) {
+            revert PredictionMarketChallenge__AmountMustBeGreaterThanZero();
+        }
 
-        // if (!prediction.isReported) {
-        //     revert PredictionMarketTrading__PredictionNotResolved();
-        // }
-        // Check that prediction has been reported and get winning option ID
-        uint256 winningOptionId = prediction.winningOptionId;
-        PredictionOptionToken winningToken = prediction.optionTokens[winningOptionId];
+        if (!s_isReported) {
+            revert PredictionMarketChallenge__PredictionNotResolved();
+        }
 
-        // Check caller has enough winning tokens
-        // if (winningToken.balanceOf(msg.sender) < _amount) {
-        //     revert PredictionMarketTrading__InsufficientWinningTokens();
-        // }
+        if (s_winningToken.balanceOf(msg.sender) < _amount) {
+            revert PredictionMarketChallenge__InsufficientWinningTokens();
+        }
 
-        // TODO: check if this is correct
-        uint256 totalSupply = winningToken.totalSupply();
+        /// TODO: check if really needed
+        uint256 totalSupply = s_winningToken.totalSupply();
+        uint256 ethToReceive = (_amount * s_ethCollateral) / totalSupply;
 
-        // Calculate the share of ETH to receive
-        uint256 ethToReceive = (_amount * prediction.ethReserve) / totalSupply;
+        s_ethCollateral -= ethToReceive;
 
-        // Update state
-        prediction.ethReserve -= ethToReceive;
-        prediction.tokenReserves[winningOptionId] -= _amount;
+        s_winningToken.burn(msg.sender, _amount);
 
-        // Transfer tokens from user to contract
-        winningToken.transferFrom(msg.sender, address(this), _amount);
-        // burn token and reduce total supply
-        winningToken.burn(address(this), _amount);
-
-        // Transfer ETH to user
         (bool success,) = msg.sender.call{ value: ethToReceive }("");
-        require(success, "ETH transfer failed");
-    }
-
-    // function to get for a specific address the amount of eth he can get back if he wons
-    function getRedemptionRate(uint256 _predictionId) external view returns (uint256) {
-        if (!s_predictions[_predictionId].isReported) {
-            revert PredictionMarketTrading__PredictionNotResolved();
+        if (!success) {
+            revert PredictionMarketChallenge__ETHTransferFailed();
         }
-        Prediction storage prediction = s_predictions[_predictionId];
-        uint256 totalSupply = prediction.optionTokens[prediction.winningOptionId].totalSupply();
-        return (prediction.ethReserve * PRECISION) / totalSupply;
+
+        emit WinningTokensRedeemed(msg.sender, _amount, ethToReceive);
     }
 
     /**
-     * DEX functions
+     * @notice Calculate the total ETH price for buying tokens
+     * @param _option The option (YES or NO) to buy tokens for
+     * @param _tradingAmount The amount of tokens to buy
+     * @return The total ETH price
      */
-    function avgPriceInEth(
-        uint256 _predictionId,
-        uint256 _initialTokenAmount,
-        uint256 _currentTokenReserve,
-        uint256 _tradingAmount
-    ) public view returns (uint256) {
-        // First calculate the average of numerator1 and numerator2 to reduce the size
-        uint256 num1 = (PRECISION - ((_currentTokenReserve * PRECISION) / (_initialTokenAmount * 2)));
-        uint256 num2 = (PRECISION - (((_currentTokenReserve - _tradingAmount) * PRECISION) / (_initialTokenAmount * 2)));
-
-        // Calculate average first to reduce number size
-        uint256 avgNumerator = (num1 + num2) / 2;
-
-        // Then multiply by tokenRatio
-        uint256 tokenRatio = s_predictions[_predictionId].tokenRatio;
-
-        uint256 result = (tokenRatio * avgNumerator) / PRECISION / PRECISION;
-
-        // Final calculation with reduced scaling factors
-        return result;
-    }
-
-    // - operation is different to function above
-    function sellAvgPriceInEth(
-        uint256 _predictionId,
-        uint256 _initialTokenAmount,
-        uint256 _currentTokenReserve,
-        uint256 _tradingAmount
-    ) public view returns (uint256) {
-        // First calculate the average of numerator1 and numerator2 to reduce the size
-        uint256 num1 = (PRECISION - ((_currentTokenReserve * PRECISION) / (_initialTokenAmount * 2)));
-        uint256 num2 = (PRECISION - (((_currentTokenReserve + _tradingAmount) * PRECISION) / (_initialTokenAmount * 2)));
-
-        // Calculate average first to reduce number size
-        uint256 avgNumerator = (num1 + num2) / 2;
-
-        // Then multiply by tokenRatio
-        uint256 tokenRatio = s_predictions[_predictionId].tokenRatio;
-
-        uint256 result = (tokenRatio * avgNumerator) / PRECISION / PRECISION;
-
-        // Final calculation with reduced scaling factors
-        return result;
-    }
-
-    /// TODO: to implement
-    // 1. add liquidity to LP pool
-    function addLiquidity(uint256 _predictionId) external payable {
-        Prediction storage prediction = s_predictions[_predictionId];
-        if (prediction.isReported) {
-            revert PredictionMarketTrading__PredictionAlreadyResolved();
-        }
-
-        // increase the gambling pot because more tokens are added
-        prediction.ethReserve += msg.value;
-        prediction.liquidity[msg.sender] += msg.value;
-
-        // the amount of all created tokens in the pool, to calcualte the percentage of each token
-        uint256 totalTokenReserves = 0;
-        for (uint256 i = 0; i < OPTIONS_COUNT; i++) {
-            totalTokenReserves += prediction.tokenReserves[i];
-        }
-
-        for (uint256 i = 0; i < OPTIONS_COUNT; i++) {
-            PredictionOptionToken optionToken = prediction.optionTokens[i];
-            //calculate the amount of tokens to mint, just simple ratio
-            uint256 tokensToMint = (msg.value * prediction.tokenReserves[i]) / totalTokenReserves;
-            prediction.tokenReserves[i] += tokensToMint;
-            optionToken.mint(address(this), tokensToMint);
-            // track added liquidty to have access to rewards and rest of tokens when prediciton ends
-        }
+    function getBuyPriceInEth(Option _option, uint256 _tradingAmount) public view returns (uint256) {
+        return _calculatePriceInEth(_option, _tradingAmount, false);
     }
 
     /**
-     * @notice Remove liquidity from the prediction market and burn corresponding tokens, if you remove liquidity before prediction ends you got no share of lpReserve
-     * @param _predictionId ID of the prediction market
-     * @param _ethToWithdraw Amount of ETH to withdraw from liquidity pool
+     * @notice Calculate the total ETH price for selling tokens
+     * @param _option The option (YES or NO) to sell tokens for
+     * @param _tradingAmount The amount of tokens to sell
+     * @return The total ETH price
      */
-    function removeLiquidity(uint256 _predictionId, uint256 _ethToWithdraw) external {
-        Prediction storage prediction = s_predictions[_predictionId];
-        if (prediction.isReported) {
-            revert PredictionMarketTrading__PredictionAlreadyResolved();
-        }
-
-        uint256 liquidity = prediction.liquidity[msg.sender];
-        if (liquidity == 0) {
-            revert PredictionMarketTrading__NoLiquidityToRemove();
-        }
-        if (_ethToWithdraw > liquidity) {
-            revert PredictionMarketTrading__InsufficientLiquidity();
-        }
-
-        uint256 ethReserveShare = _ethToWithdraw * PRECISION / prediction.ethReserve;
-        prediction.ethReserve -= _ethToWithdraw;
-        prediction.liquidity[msg.sender] -= _ethToWithdraw;
-
-        for (uint256 i = 0; i < OPTIONS_COUNT; i++) {
-            PredictionOptionToken optionToken = prediction.optionTokens[i];
-            uint256 tokensToBurn = (ethReserveShare * prediction.tokenReserves[i]) / PRECISION;
-            optionToken.burn(address(this), tokensToBurn);
-            prediction.tokenReserves[i] -= tokensToBurn;
-        }
-
-        (bool success,) = msg.sender.call{ value: _ethToWithdraw }("");
-        require(success, "ETH transfer failed");
+    function getSellPriceInEth(Option _option, uint256 _tradingAmount) public view returns (uint256) {
+        return _calculatePriceInEth(_option, _tradingAmount, true);
     }
 
-    //////////////////////////////////////////
-    /// Private & External View Functions ////
-    //////////////////////////////////////////
+    /////////////////////////
+    /// Helper Functions ///
+    ////////////////////////
 
-    function getPredictionQuestion(uint256 _predictionId) external view returns (string memory) {
-        return s_predictions[_predictionId].question;
+    /**
+     * @dev Internal helper to calculate ETH price for both buying and selling
+     * @param _option The option (YES or NO)
+     * @param _tradingAmount The amount of tokens
+     * @param _isSelling Whether this is a sell calculation
+     */
+    function _calculatePriceInEth(
+        Option _option,
+        uint256 _tradingAmount,
+        bool _isSelling
+    ) private view returns (uint256) {
+        uint256 currentTokenReserve = _option == Option.YES
+            ? i_optionToken1.balanceOf(address(this))
+            : i_optionToken2.balanceOf(address(this));
+        uint256 newReserve = _isSelling
+            ? currentTokenReserve + _tradingAmount
+            : currentTokenReserve - _tradingAmount;
+        uint256 currentOtherTokenReserve = _option == Option.YES
+            ? i_optionToken2.balanceOf(address(this))
+            : i_optionToken1.balanceOf(address(this));
+
+        uint256 currentOtherTokenSupply = INITIAL_TOKEN_AMOUNT -
+            currentOtherTokenReserve;
+        uint256 currentTokenSupply = INITIAL_TOKEN_AMOUNT - currentTokenReserve;
+        uint256 newSupply = INITIAL_TOKEN_AMOUNT - newReserve;
+
+        uint256 probabilityStart;
+
+        if (currentTokenSupply + currentOtherTokenSupply == 0) {
+            probabilityStart = PRECISION / 2;
+        } else {
+            probabilityStart =
+                (currentTokenSupply * PRECISION) /
+                (currentTokenSupply + currentOtherTokenSupply);
+        }
+
+        uint256 probabilityEnd;
+
+        if (newSupply + currentOtherTokenSupply == 0) {
+            probabilityEnd = PRECISION / 2;
+        } else {
+            probabilityEnd =
+                (newSupply * PRECISION) /
+                (newSupply + currentOtherTokenSupply);
+        }
+
+        uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
+
+        uint256 avg = (i_initialTokenRatio * probabilityAvg) /
+            PRECISION /
+            PRECISION;
+        return (avg * _tradingAmount) / PRECISION;
     }
 
-    function getPredictionOption(uint256 _predictionId, uint256 _optionId) external view returns (string memory) {
-        return s_predictions[_predictionId].options[_optionId];
-    }
+    /////////////////////////
+    /// Getter Functions ///
+    ////////////////////////
 
-    function getPredictionOptionsCount() external pure returns (uint256) {
-        return OPTIONS_COUNT;
-    }
-
-    function getPredictionOptionToken(uint256 _predictionId, uint256 _optionId)
+    function prediction()
         external
         view
-        returns (PredictionOptionToken)
+        returns (
+            string memory question,
+            string memory outcome1,
+            string memory outcome2,
+            address oracle,
+            uint256 initialTokenRatio,
+            uint256 token1Reserve,
+            uint256 token2Reserve,
+            bool isReported,
+            address optionToken1,
+            address optionToken2,
+            address winningToken,
+            uint256 ethCollateral,
+            uint256 lpTradingRevenue
+        )
     {
-        return s_predictions[_predictionId].optionTokens[_optionId];
-    }
-
-    function getPredictionEthReserve(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].ethReserve;
-    }
-
-    function getPredictionLpReserve(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].lpReserve;
-    }
-
-    function getTokenReserve(uint256 _predictionId, uint256 _optionId) external view returns (uint256) {
-        return s_predictions[_predictionId].tokenReserves[_optionId];
-    }
-
-    function getPredictionWinningOptionId(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].winningOptionId;
-    }
-
-    function getOptions(uint256 _predictionId, uint256 _optionId) external view returns (string memory) {
-        return s_predictions[_predictionId].options[_optionId];
-    }
-
-    function getOptionsToken(uint256 _predictionId, uint256 _optionId) external view returns (PredictionOptionToken) {
-        return s_predictions[_predictionId].optionTokens[_optionId];
-    }
-
-    function getLpReserve(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].lpReserve;
-    }
-
-    function getInitialTokenAmount(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].initialTokenAmount;
-    }
-
-    function getInitialLiquidity(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].initialLiquidity;
-    }
-
-    function getLiquidity(uint256 _predictionId, address _address) external view returns (uint256) {
-        return s_predictions[_predictionId].liquidity[_address];
-    }
-
-    function getReported(uint256 _predictionId) external view returns (bool) {
-        return s_predictions[_predictionId].isReported;
-    }
-
-    function getWinningOptionId(uint256 _predictionId) external view returns (uint256) {
-        return s_predictions[_predictionId].winningOptionId;
+        question = i_question;
+        outcome1 = i_optionToken1.name();
+        outcome2 = i_optionToken2.name();
+        oracle = i_oracle;
+        initialTokenRatio = i_initialTokenRatio;
+        token1Reserve = i_optionToken1.balanceOf(address(this));
+        token2Reserve = i_optionToken2.balanceOf(address(this));
+        isReported = s_isReported;
+        optionToken1 = address(i_optionToken1);
+        optionToken2 = address(i_optionToken2);
+        winningToken = address(s_winningToken);
+        ethCollateral = s_ethCollateral;
+        lpTradingRevenue = s_lpTradingRevenue;
     }
 }

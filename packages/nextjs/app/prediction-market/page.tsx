@@ -12,7 +12,6 @@ const PredictionMarket: NextPage = () => {
   return (
     <>
       <div className="text-center mt-8 bg-secondary p-4 md:p-10">
-        {/* TODO: Show predictions / create prediction --> create in depoly script*/}
         <div className="flex flex-col md:flex-row gap-6 justify-center items-stretch">
           <PredictionMarketInfo />
           <OverviewBuySellShares />

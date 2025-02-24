@@ -4,75 +4,59 @@ import { ReportPrediction } from "./ReportPrediction";
 import { formatEther } from "viem";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
-/// TODO: add total supply to calculate winning chance, if liquidty is added or removed it doenst work
 export function PredictionMarketInfo() {
-  const { data: predictionQuestion } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getPredictionQuestion",
-    args: [BigInt(0)],
+  const { data: prediction, isLoading } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "prediction",
   });
 
-  const { data: ethReserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getPredictionEthReserve",
-    args: [BigInt(0)],
-  });
-
-  const { data: lpReserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getPredictionLpReserve",
-    args: [BigInt(0)],
-  });
-
-  ///   Token 1
-  const { data: predictionOutcome1 } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getOptions",
-    args: [BigInt(0), BigInt(0)],
-  });
-
-  const { data: predictionOutcome2 } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getOptions",
-    args: [BigInt(0), BigInt(1)],
-  });
-
-  const { data: token1Reserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getTokenReserve",
-    args: [BigInt(0), BigInt(0)],
-  });
-
-  const { data: token2Reserve } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getTokenReserve",
-    args: [BigInt(0), BigInt(1)],
-  });
-
-  const { data: reported } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getReported",
-    args: [BigInt(0)],
-  });
-
-  const { data: winningOptionId } = useScaffoldReadContract({
-    contractName: "PredictionMarketTradingWOTime",
-    functionName: "getWinningOptionId",
-    args: [BigInt(0)],
+  const { data: initialTokenAmount, isLoading: isLoadingInitialTokenAmount } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "INITIAL_TOKEN_AMOUNT",
   });
 
   const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
-    if (_token1Reserve === undefined || _token2Reserve === undefined) return 0;
+    if (_token1Reserve === undefined || _token2Reserve === undefined || initialTokenAmount === undefined) return 0;
 
-    const token1Supply = 1000 - Number(formatEther(_token1Reserve));
-    const token2Supply = 1000 - Number(formatEther(_token2Reserve));
+    if (_token1Reserve === initialTokenAmount && _token2Reserve === initialTokenAmount) return 0.5;
 
-    if (token1Supply + token2Supply === 0) return 0;
+    const token1Supply = Number(formatEther(initialTokenAmount)) - Number(formatEther(_token1Reserve));
+    const token2Supply = Number(formatEther(initialTokenAmount)) - Number(formatEther(_token2Reserve));
 
     const option1Chance = token1Supply / (token1Supply + token2Supply);
 
     return Number(option1Chance);
   };
+
+  if (isLoading)
+    return (
+      <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 text-center">Prediction Market Info</h2>
+        <p className="text-base-content">Loading prediction market...</p>
+      </div>
+    );
+
+  if (!prediction)
+    return (
+      <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 text-center">Prediction Market Info</h2>
+        <p className="text-base-content">No prediction market found</p>
+      </div>
+    );
+
+  const question = prediction[0];
+  const predictionOutcome1 = prediction[1];
+  const predictionOutcome2 = prediction[2];
+  // const oracle = prediction[3];
+  // const intitalTokenRatio = prediction[4];
+  const token1Reserve = prediction[5];
+  const token2Reserve = prediction[6];
+  const reported = prediction[7];
+  const optionToken1 = prediction[8];
+  // const optionToken2 = prediction[9];
+  const winningToken = prediction[10];
+  const ethCollateral = prediction[11];
+  const lpTradingRevenue = prediction[12];
 
   return (
     <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
@@ -81,7 +65,7 @@ export function PredictionMarketInfo() {
       <div className="space-y-6">
         <div className="bg-base-200 p-4 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Question</h3>
-          <p className="text-base-content">{predictionQuestion}</p>
+          <p className="text-base-content">{question}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -90,7 +74,7 @@ export function PredictionMarketInfo() {
             <div
               className={`radial-progress ${
                 reported
-                  ? winningOptionId === BigInt(0)
+                  ? winningToken === optionToken1
                     ? "text-success"
                     : "text-error"
                   : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) > 0.5
@@ -102,7 +86,7 @@ export function PredictionMarketInfo() {
               style={
                 {
                   "--value": reported
-                    ? winningOptionId === BigInt(0)
+                    ? winningToken === optionToken1
                       ? 100
                       : 0
                     : calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100,
@@ -110,7 +94,7 @@ export function PredictionMarketInfo() {
               }
             >
               {reported
-                ? winningOptionId === BigInt(0)
+                ? winningToken === optionToken1
                   ? "100.00%"
                   : "0.00%"
                 : (calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
@@ -132,13 +116,13 @@ export function PredictionMarketInfo() {
             <div className="stat">
               <div className="stat-title">Winning Pot</div>
               <div className="stat-value text-primary">
-                {Number(formatEther(BigInt(ethReserve ?? 0))).toFixed(4)} ETH
+                {Number(formatEther(BigInt(ethCollateral ?? 0))).toFixed(4)} ETH
               </div>
             </div>
             <div className="stat">
               <div className="stat-title">LP Revenue</div>
               <div className="stat-value text-secondary">
-                {Number(formatEther(BigInt(lpReserve ?? 0))).toFixed(4)} ETH
+                {Number(formatEther(BigInt(lpTradingRevenue ?? 0))).toFixed(4)} ETH
               </div>
             </div>
           </div>
