@@ -7,11 +7,12 @@ import { PredictionMarketToken } from "../contracts/PredictionMarketToken.sol";
 
 contract PredictionMarketChallengeTest is Test {
     PredictionMarketChallenge public predictionMarket;
-    uint256 initialLiquidity = 1 ether;
+    uint256 initialLiquidity = 10 ether;
     address oracle = address(1);
     address gambler1 = address(2);
     address gambler2 = address(3);
     address gambler3 = address(4);
+    uint256 PRECISION = 1e18;
 
     function setUp() public {
         deal(oracle, 100 ether);
@@ -127,5 +128,59 @@ contract PredictionMarketChallengeTest is Test {
         console.log("Prediction contract ETH balance after:", predictionEthBalanceAfter);
         uint256 totalSupplyAfter = winningToken.totalSupply();
         console.log("totalSupplyAfter", totalSupplyAfter);
+    }
+
+    function testAddLiquidity() public {
+        uint256 addAmount = 10 ether;
+        uint256 ethCollateralBefore = predictionMarket.s_ethCollateral();
+        uint256 token1BalanceBefore = predictionMarket.i_optionToken1().balanceOf(address(predictionMarket));
+        uint256 token2BalanceBefore = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
+
+        vm.prank(oracle);
+        predictionMarket.addLiquidity{ value: addAmount }();
+
+        uint256 ethCollateralAfter = predictionMarket.s_ethCollateral();
+        uint256 token1BalanceAfter = predictionMarket.i_optionToken1().balanceOf(address(predictionMarket));
+        uint256 token2BalanceAfter = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
+
+        assertEq(ethCollateralAfter, ethCollateralBefore + addAmount);
+        assertEq(token1BalanceAfter, token1BalanceBefore + (addAmount * predictionMarket.i_initialTokenRatio()));
+        assertEq(token2BalanceAfter, token2BalanceBefore + (addAmount * predictionMarket.i_initialTokenRatio()));
+
+        // Test can't add liquidity after prediction is resolved
+        vm.prank(oracle);
+        predictionMarket.report(PredictionMarketChallenge.Option.YES);
+
+        vm.prank(oracle);
+        vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__PredictionAlreadyResolved.selector);
+        predictionMarket.addLiquidity{ value: addAmount }();
+    }
+
+    function testRemoveLiquidity() public {
+        uint256 removeAmount = 1 ether;
+        uint256 ethCollateralBefore = predictionMarket.s_ethCollateral();
+        uint256 token1BalanceBefore = predictionMarket.i_optionToken1().balanceOf(address(predictionMarket));
+        uint256 token2BalanceBefore = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
+        uint256 oracleBalanceBefore = address(oracle).balance;
+
+        uint256 tokensToBurn = removeAmount * predictionMarket.i_initialTokenRatio() / (PRECISION * PRECISION);
+
+        vm.prank(oracle);
+        predictionMarket.removeLiquidity(removeAmount);
+
+        uint256 ethCollateralAfter = predictionMarket.s_ethCollateral();
+        uint256 token1BalanceAfter = predictionMarket.i_optionToken1().balanceOf(address(predictionMarket));
+        uint256 token2BalanceAfter = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
+        uint256 oracleBalanceAfter = address(oracle).balance;
+
+        assertEq(ethCollateralAfter, ethCollateralBefore - removeAmount);
+        assertEq(token1BalanceAfter, token1BalanceBefore - tokensToBurn);
+        assertEq(token2BalanceAfter, token2BalanceBefore - tokensToBurn);
+        assertEq(oracleBalanceAfter, oracleBalanceBefore + removeAmount);
+
+        uint256 excessiveAmount = 1000000 ether;
+        vm.prank(oracle);
+        vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__InsufficientTokenReserve.selector);
+        predictionMarket.removeLiquidity(excessiveAmount);
     }
 }

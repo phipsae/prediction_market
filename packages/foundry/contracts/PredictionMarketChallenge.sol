@@ -2,8 +2,9 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import { PredictionMarketToken } from "./PredictionMarketToken.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract PredictionMarketChallenge {
+contract PredictionMarketChallenge is Ownable {
     /////////////////
     /// Errors //////
     /////////////////
@@ -36,6 +37,7 @@ contract PredictionMarketChallenge {
     uint256 public constant INITIAL_TOKEN_AMOUNT = 1000 ether;
 
     address public immutable i_oracle; // is owner of contract as well
+    // TODO: add owner of contract
     uint256 public immutable i_initialTokenRatio;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
@@ -76,7 +78,7 @@ contract PredictionMarketChallenge {
     /// Functions ///
     /////////////////
 
-    constructor(address _oracle, string memory _question) payable {
+    constructor(address _oracle, string memory _question) payable Ownable(msg.sender) {
         i_oracle = _oracle;
         i_question = _question;
         if (msg.value <= 0) {
@@ -85,7 +87,6 @@ contract PredictionMarketChallenge {
 
         s_ethCollateral = msg.value;
         i_initialTokenRatio = (msg.value * PRECISION * PRECISION) / INITIAL_TOKEN_AMOUNT;
-
         i_optionToken1 = new PredictionMarketToken("Yes", "Y", INITIAL_TOKEN_AMOUNT);
         i_optionToken2 = new PredictionMarketToken("No", "N", INITIAL_TOKEN_AMOUNT);
     }
@@ -235,6 +236,40 @@ contract PredictionMarketChallenge {
         return _calculatePriceInEth(_option, _tradingAmount, true);
     }
 
+    function addLiquidity() external payable onlyOwner {
+        if (s_isReported) {
+            revert PredictionMarketChallenge__PredictionAlreadyResolved();
+        }
+        s_ethCollateral += msg.value;
+
+        i_optionToken1.mint(address(this), msg.value * i_initialTokenRatio);
+        i_optionToken2.mint(address(this), msg.value * i_initialTokenRatio);
+    }
+
+    /**
+     * @notice Remove liquidity from the prediction market and burn corresponding tokens, if you remove liquidity before prediction ends you got no share of lpReserve
+     * @param _ethToWithdraw Amount of ETH to withdraw from liquidity pool
+     */
+    function removeLiquidity(uint256 _ethToWithdraw) external onlyOwner {
+        uint256 amountTokenToBurn = _ethToWithdraw * i_initialTokenRatio / (PRECISION * PRECISION);
+
+        if (amountTokenToBurn > (i_optionToken1.balanceOf(address(this)))) {
+            revert PredictionMarketChallenge__InsufficientTokenReserve();
+        }
+
+        if (amountTokenToBurn > (i_optionToken2.balanceOf(address(this)))) {
+            revert PredictionMarketChallenge__InsufficientTokenReserve();
+        }
+
+        s_ethCollateral -= _ethToWithdraw;
+
+        i_optionToken1.burn(address(this), amountTokenToBurn);
+        i_optionToken2.burn(address(this), amountTokenToBurn);
+
+        (bool success,) = msg.sender.call{ value: _ethToWithdraw }("");
+        require(success, "ETH transfer failed");
+    }
+
     /////////////////////////
     /// Helper Functions ///
     ////////////////////////
@@ -245,23 +280,18 @@ contract PredictionMarketChallenge {
      * @param _tradingAmount The amount of tokens
      * @param _isSelling Whether this is a sell calculation
      */
-    function _calculatePriceInEth(
-        Option _option,
-        uint256 _tradingAmount,
-        bool _isSelling
-    ) private view returns (uint256) {
-        uint256 currentTokenReserve = _option == Option.YES
-            ? i_optionToken1.balanceOf(address(this))
-            : i_optionToken2.balanceOf(address(this));
-        uint256 newReserve = _isSelling
-            ? currentTokenReserve + _tradingAmount
-            : currentTokenReserve - _tradingAmount;
-        uint256 currentOtherTokenReserve = _option == Option.YES
-            ? i_optionToken2.balanceOf(address(this))
-            : i_optionToken1.balanceOf(address(this));
+    function _calculatePriceInEth(Option _option, uint256 _tradingAmount, bool _isSelling)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 currentTokenReserve =
+            _option == Option.YES ? i_optionToken1.balanceOf(address(this)) : i_optionToken2.balanceOf(address(this));
+        uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
+        uint256 currentOtherTokenReserve =
+            _option == Option.YES ? i_optionToken2.balanceOf(address(this)) : i_optionToken1.balanceOf(address(this));
 
-        uint256 currentOtherTokenSupply = INITIAL_TOKEN_AMOUNT -
-            currentOtherTokenReserve;
+        uint256 currentOtherTokenSupply = INITIAL_TOKEN_AMOUNT - currentOtherTokenReserve;
         uint256 currentTokenSupply = INITIAL_TOKEN_AMOUNT - currentTokenReserve;
         uint256 newSupply = INITIAL_TOKEN_AMOUNT - newReserve;
 
@@ -270,9 +300,7 @@ contract PredictionMarketChallenge {
         if (currentTokenSupply + currentOtherTokenSupply == 0) {
             probabilityStart = PRECISION / 2;
         } else {
-            probabilityStart =
-                (currentTokenSupply * PRECISION) /
-                (currentTokenSupply + currentOtherTokenSupply);
+            probabilityStart = (currentTokenSupply * PRECISION) / (currentTokenSupply + currentOtherTokenSupply);
         }
 
         uint256 probabilityEnd;
@@ -280,16 +308,12 @@ contract PredictionMarketChallenge {
         if (newSupply + currentOtherTokenSupply == 0) {
             probabilityEnd = PRECISION / 2;
         } else {
-            probabilityEnd =
-                (newSupply * PRECISION) /
-                (newSupply + currentOtherTokenSupply);
+            probabilityEnd = (newSupply * PRECISION) / (newSupply + currentOtherTokenSupply);
         }
 
         uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
 
-        uint256 avg = (i_initialTokenRatio * probabilityAvg) /
-            PRECISION /
-            PRECISION;
+        uint256 avg = (i_initialTokenRatio * probabilityAvg) / PRECISION / PRECISION;
         return (avg * _tradingAmount) / PRECISION;
     }
 
