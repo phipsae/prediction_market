@@ -1,0 +1,230 @@
+"use client";
+
+import { useState } from "react";
+import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
+import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
+import { formatEther, parseEther } from "viem";
+import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useReadContract } from "wagmi";
+
+export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionIndex: number; colorScheme: string }) {
+  const [inputBuyAmount, setInputBuyAmount] = useState<bigint>(BigInt(0));
+  const tokenBuyAmount = parseEther((inputBuyAmount || BigInt(0)).toString());
+  const [inputSellAmount, setInputSellAmount] = useState<bigint>(BigInt(0));
+  const tokenSellAmount = parseEther((inputSellAmount || BigInt(0)).toString());
+
+  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
+  const contractAddress = deployedContractData?.address;
+
+  const { writeContractAsync: writeYourContractAsync } = useScaffoldWriteContract({
+    contractName: "PredictionMarketChallenge",
+  });
+
+  const { data: prediction, isLoading } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "prediction",
+  });
+
+  const { data: totalPriceInEth } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "getBuyPriceInEth",
+    args: [optionIndex, tokenBuyAmount],
+    watch: true,
+  });
+
+  const { data: sellTotalPriceInEth } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "getSellPriceInEth",
+    args: [optionIndex, tokenSellAmount],
+    watch: true,
+  });
+
+  const erc20Abi = [
+    {
+      inputs: [],
+      name: "totalSupply",
+      outputs: [{ name: "", type: "uint256" }],
+      stateMutability: "view",
+      type: "function",
+    },
+  ] as const;
+
+  const { data: totalSupply } = useReadContract({
+    abi: erc20Abi,
+    address: prediction?.[8] as string,
+    functionName: "totalSupply",
+  });
+
+  if (isLoading)
+    return (
+      <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+        <h2 className="text-lg font-semibold text-center">Loading prediction market...</h2>
+      </div>
+    );
+
+  if (!prediction)
+    return (
+      <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+        <h2 className="text-lg font-semibold text-center">No prediction market found</h2>
+      </div>
+    );
+
+  const token1Address = prediction[8 + optionIndex];
+  const option = prediction[1 + optionIndex];
+  const token1Reserve = prediction[5 + optionIndex] as bigint;
+  const token2Reserve = prediction[6 - optionIndex] as bigint;
+  const ethCollateral = prediction[11];
+
+  const etherToReceive = totalSupply ? (parseEther((inputBuyAmount || BigInt(0)).toString()) * ethCollateral) / totalSupply : 0n;
+  const etherToWin = totalPriceInEth ? etherToReceive - totalPriceInEth : 0n;
+
+  const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
+    if (_token1Reserve === undefined || _token2Reserve === undefined || totalSupply === undefined) return 0;
+
+    if (_token1Reserve === totalSupply && _token2Reserve === totalSupply) return 0.5;
+
+    const token1Supply = Number(formatEther(totalSupply)) - Number(formatEther(_token1Reserve));
+    const token2Supply = Number(formatEther(totalSupply)) - Number(formatEther(_token2Reserve));
+
+    const option1Chance = token1Supply / (token1Supply + token2Supply);
+
+    return Number(option1Chance);
+  };
+
+  return (
+    <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+      <div className="bg-base-200 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold mb-2">Probability</h3>
+        <div
+          className="radial-progress text-neutral"
+          style={
+            {
+              "--value": calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100,
+            } as any
+          }
+        >
+          {(calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
+            "%"}
+        </div>
+      </div>
+
+      <TokenBalance tokenAddress={token1Address as string} option={option as string} />
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* Buy Section */}
+        <div className={`bg-${colorScheme}-50 p-3 rounded-lg`}>
+          <h2 className={`text-lg font-semibold text-${colorScheme}-800 mb-2`}>Buy {option}</h2>
+          <div className="space-y-2">
+            <input
+              type="number"
+              placeholder="Amount to buy"
+              className="input input-bordered input-sm w-full"
+              onChange={e => setInputBuyAmount(BigInt(e.target.value))}
+            />
+
+            {totalPriceInEth && (
+              <>
+                <div className="text-sm">ETH needed: {formatEther(totalPriceInEth)}</div>
+                <div className="bg-base-200 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2">New Probability</h3>
+                  <div
+                    className="radial-progress text-neutral"
+                    style={
+                      {
+                        "--value": calculateOption1Chance((token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100,
+                      } as any
+                    }
+                  >
+                    {(calculateOption1Chance((token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
+                      "%"}
+                  </div>
+                </div>
+                {totalSupply && (
+                  <div className="text-sm">
+                    You can get:
+                    Ξ{formatEther(etherToReceive)}
+                    (winning Ξ{formatEther(etherToWin)})
+                  </div>
+                )}
+              </>
+            )}
+
+            <button
+              className={`btn btn-sm w-full btn-primary text-white`}
+              disabled={!totalPriceInEth}
+              onClick={async () => {
+                try {
+                  await writeYourContractAsync({
+                    functionName: "buyTokensWithETH",
+                    args: [optionIndex, tokenBuyAmount],
+                    value: totalPriceInEth,
+                  });
+                } catch (e) {
+                  console.error("Error buying tokens:", e);
+                }
+              }}
+            >
+              Buy
+            </button>
+          </div>
+        </div>
+
+        {/* Sell Section */}
+        <div className="p-3 rounded-lg">
+          <h2 className="text-lg font-semibold mb-2">Sell {option}</h2>
+          <div className="space-y-2">
+            {/* Token Approval */}
+            <div className="mb-4">
+              <GiveAllowance tokenAddress={token1Address as string} spenderAddress={contractAddress ?? ""} />
+            </div>
+
+            <input
+              type="number"
+              placeholder="Amount to sell"
+              className="input input-bordered input-sm w-full"
+              onChange={e => setInputSellAmount(BigInt(e.target.value))}
+            />
+
+            {sellTotalPriceInEth && (
+              <>
+                <div className="text-sm">
+                  ETH to receive: {formatEther(sellTotalPriceInEth)}
+                </div>
+                <div className="bg-base-200 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2">New Probability</h3>
+                  <div
+                    className="radial-progress text-neutral"
+                    style={
+                      {
+                        "--value": calculateOption1Chance((token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100,
+                      } as any
+                    }
+                  >
+                    {(calculateOption1Chance((token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
+                      "%"}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <button
+              className="btn btn-sm w-full btn-primary text-white"
+              onClick={async () => {
+                try {
+                  await writeYourContractAsync({
+                    functionName: "sellTokensForEth",
+                    args: [optionIndex, tokenSellAmount],
+                  });
+                } catch (e) {
+                  console.error("Error selling tokens:", e);
+                }
+              }}
+            >
+              Sell
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
