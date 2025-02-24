@@ -245,20 +245,51 @@ contract PredictionMarketChallenge {
      * @param _tradingAmount The amount of tokens
      * @param _isSelling Whether this is a sell calculation
      */
-    function _calculatePriceInEth(Option _option, uint256 _tradingAmount, bool _isSelling)
-        private
-        view
-        returns (uint256)
-    {
-        uint256 currentTokenReserve =
-            _option == Option.YES ? i_optionToken1.balanceOf(address(this)) : i_optionToken2.balanceOf(address(this));
-        uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
+    function _calculatePriceInEth(
+        Option _option,
+        uint256 _tradingAmount,
+        bool _isSelling
+    ) private view returns (uint256) {
+        uint256 currentTokenReserve = _option == Option.YES
+            ? i_optionToken1.balanceOf(address(this))
+            : i_optionToken2.balanceOf(address(this));
+        uint256 newReserve = _isSelling
+            ? currentTokenReserve + _tradingAmount
+            : currentTokenReserve - _tradingAmount;
+        uint256 currentOtherTokenReserve = _option == Option.YES
+            ? i_optionToken2.balanceOf(address(this))
+            : i_optionToken1.balanceOf(address(this));
 
-        uint256 num1 = (PRECISION - ((currentTokenReserve * PRECISION) / (INITIAL_TOKEN_AMOUNT * 2)));
-        uint256 num2 = (PRECISION - ((newReserve * PRECISION) / (INITIAL_TOKEN_AMOUNT * 2)));
-        uint256 avgNumerator = (num1 + num2) / 2;
+        uint256 currentOtherTokenSupply = INITIAL_TOKEN_AMOUNT -
+            currentOtherTokenReserve;
+        uint256 currentTokenSupply = INITIAL_TOKEN_AMOUNT - currentTokenReserve;
+        uint256 newSupply = INITIAL_TOKEN_AMOUNT - newReserve;
 
-        uint256 avg = (i_initialTokenRatio * avgNumerator) / PRECISION / PRECISION;
+        uint256 probabilityStart;
+
+        if (currentTokenSupply + currentOtherTokenSupply == 0) {
+            probabilityStart = PRECISION / 2;
+        } else {
+            probabilityStart =
+                (currentTokenSupply * PRECISION) /
+                (currentTokenSupply + currentOtherTokenSupply);
+        }
+
+        uint256 probabilityEnd;
+
+        if (newSupply + currentOtherTokenSupply == 0) {
+            probabilityEnd = PRECISION / 2;
+        } else {
+            probabilityEnd =
+                (newSupply * PRECISION) /
+                (newSupply + currentOtherTokenSupply);
+        }
+
+        uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
+
+        uint256 avg = (i_initialTokenRatio * probabilityAvg) /
+            PRECISION /
+            PRECISION;
         return (avg * _tradingAmount) / PRECISION;
     }
 
