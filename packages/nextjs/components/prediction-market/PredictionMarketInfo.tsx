@@ -43,7 +43,6 @@ export function PredictionMarketInfo() {
               token1Reserve={BigInt(prediction[5])}
               token2Reserve={BigInt(prediction[6])}
               tokenAddress={prediction[8]}
-              optionIndex={0}
               label="Chance"
             />
           </div>

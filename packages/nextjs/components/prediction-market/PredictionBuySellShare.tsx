@@ -81,19 +81,6 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
     : 0n;
   const etherToWin = totalPriceInEth ? etherToReceive - totalPriceInEth : 0n;
 
-  const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
-    if (_token1Reserve === undefined || _token2Reserve === undefined || totalSupply === undefined) return 0;
-
-    if (_token1Reserve === totalSupply && _token2Reserve === totalSupply) return 0.5;
-
-    const token1Supply = Number(formatEther(totalSupply)) - Number(formatEther(_token1Reserve));
-    const token2Supply = Number(formatEther(totalSupply)) - Number(formatEther(_token2Reserve));
-
-    const option1Chance = token1Supply / (token1Supply + token2Supply);
-
-    return Number(option1Chance);
-  };
-
   return (
     <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
       <ProbabilityDisplay
