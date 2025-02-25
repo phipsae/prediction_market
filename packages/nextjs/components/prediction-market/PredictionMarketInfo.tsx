@@ -1,5 +1,6 @@
 "use client";
 
+import { ProbabilityDisplay } from "./ProabilityDisplay";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionMarketInfo() {
@@ -31,10 +32,20 @@ export function PredictionMarketInfo() {
     <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
       <div className="space-y-6">
         <div className="bg-base-200 p-4 rounded-lg">
-          <div className={`badge ${reported ? "badge-success" : "badge-warning"}`}>
-            {reported ? "Reported" : "In Progress"}
+          <div className="flex justify-between items-center">
+            <div>
+              <div className={`badge ${reported ? "badge-success" : "badge-warning"}`}>
+                {reported ? "Reported" : "In Progress"}
+              </div>
+              <p className="text-base-content">{question}</p>
+            </div>
+            <ProbabilityDisplay
+              token1Reserve={BigInt(prediction[5])}
+              token2Reserve={BigInt(prediction[6])}
+              tokenAddress={prediction[8]}
+              label="Chance"
+            />
           </div>
-          <p className="text-base-content">{question}</p>
         </div>
       </div>
     </div>
