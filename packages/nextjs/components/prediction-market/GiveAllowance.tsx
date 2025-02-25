@@ -18,11 +18,18 @@ const erc20Abi = [
   },
 ] as const;
 
-export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: string; spenderAddress: string }) {
-  const [amount, setAmount] = useState<string>("");
-
-  console.log("tokenAddress From GiveAllowance", tokenAddress);
-  console.log("spenderAddress From GiveAllowance", spenderAddress);
+export function GiveAllowance({
+  tokenAddress,
+  spenderAddress,
+  amount = "0",
+  showInput = true,
+}: {
+  tokenAddress: string;
+  spenderAddress: string;
+  amount?: string;
+  showInput?: boolean;
+}) {
+  const [inputAmount, setInputAmount] = useState<string>("");
 
   const { writeContractAsync: approveToken } = useWriteContract();
 
@@ -32,7 +39,7 @@ export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: 
         abi: erc20Abi,
         address: tokenAddress,
         functionName: "approve",
-        args: [spenderAddress, parseEther(amount || "0")],
+        args: [spenderAddress, parseEther(showInput ? inputAmount || "0" : amount)],
       });
       notification.success("Tokens approved successfully");
     } catch (error) {
@@ -41,16 +48,21 @@ export function GiveAllowance({ tokenAddress, spenderAddress }: { tokenAddress: 
   };
 
   return (
-    <div className="space-y-2">
-      <input
-        type="number"
-        placeholder="Amount to approve"
-        className="input input-bordered input-sm w-full border-gray-300 focus:border-gray-500"
-        value={amount}
-        onChange={e => setAmount(e.target.value)}
-      />
-      <button className="btn btn-sm w-full bg-gray-600 hover:bg-gray-700 text-white" onClick={handleApprove}>
-        Approve Tokens
+    <div className={showInput ? "space-y-2" : ""}>
+      {showInput && (
+        <input
+          type="number"
+          placeholder="Amount to approve"
+          className="input input-bordered input-sm w-full border-gray-300 focus:border-gray-500"
+          value={inputAmount}
+          onChange={e => setInputAmount(e.target.value)}
+        />
+      )}
+      <button
+        className={`btn btn-sm ${showInput ? "w-full" : "flex-1"} bg-gray-600 hover:bg-gray-700 text-white`}
+        onClick={handleApprove}
+      >
+        Approve
       </button>
     </div>
   );

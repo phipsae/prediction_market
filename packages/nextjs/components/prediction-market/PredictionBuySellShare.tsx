@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { formatEther, parseEther } from "viem";
+import { useReadContract } from "wagmi";
 import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
 import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
-import { formatEther, parseEther } from "viem";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { useReadContract } from "wagmi";
 
 export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionIndex: number; colorScheme: string }) {
   const [inputBuyAmount, setInputBuyAmount] = useState<bigint>(BigInt(0));
@@ -75,7 +75,9 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
   const token2Reserve = prediction[6 - optionIndex] as bigint;
   const ethCollateral = prediction[11];
 
-  const etherToReceive = totalSupply ? (parseEther((inputBuyAmount || BigInt(0)).toString()) * ethCollateral) / totalSupply : 0n;
+  const etherToReceive = totalSupply
+    ? (parseEther((inputBuyAmount || BigInt(0)).toString()) * ethCollateral) / totalSupply
+    : 0n;
   const etherToWin = totalPriceInEth ? etherToReceive - totalPriceInEth : 0n;
 
   const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {
@@ -103,12 +105,13 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
             } as any
           }
         >
-          {(calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
-            "%"}
+          {(calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) + "%"}
         </div>
       </div>
 
-      <TokenBalance tokenAddress={token1Address as string} option={option as string} />
+      <div className="flex justify-center">
+        <TokenBalance tokenAddress={token1Address as string} option={option as string} />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Buy Section */}
@@ -131,18 +134,25 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
                     className="radial-progress text-neutral"
                     style={
                       {
-                        "--value": calculateOption1Chance((token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100,
+                        "--value":
+                          calculateOption1Chance(
+                            (token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()),
+                            token2Reserve ?? BigInt(0),
+                          ) * 100,
                       } as any
                     }
                   >
-                    {(calculateOption1Chance((token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
-                      "%"}
+                    {(
+                      calculateOption1Chance(
+                        (token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()),
+                        token2Reserve ?? BigInt(0),
+                      ) * 100
+                    ).toFixed(2) + "%"}
                   </div>
                 </div>
                 {totalSupply && (
                   <div className="text-sm">
-                    You can get:
-                    Ξ{formatEther(etherToReceive)}
+                    You can get: Ξ{formatEther(etherToReceive)}
                     (winning Ξ{formatEther(etherToWin)})
                   </div>
                 )}
@@ -169,15 +179,9 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
           </div>
         </div>
 
-        {/* Sell Section */}
-        <div className="p-3 rounded-lg">
+        <div className="bg-base-100 p-3 rounded-lg">
           <h2 className="text-lg font-semibold mb-2">Sell {option}</h2>
           <div className="space-y-2">
-            {/* Token Approval */}
-            <div className="mb-4">
-              <GiveAllowance tokenAddress={token1Address as string} spenderAddress={contractAddress ?? ""} />
-            </div>
-
             <input
               type="number"
               placeholder="Amount to sell"
@@ -187,41 +191,55 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
             {sellTotalPriceInEth && (
               <>
-                <div className="text-sm">
-                  ETH to receive: {formatEther(sellTotalPriceInEth)}
-                </div>
+                <div className="text-sm">ETH to receive: {formatEther(sellTotalPriceInEth)}</div>
                 <div className="bg-base-200 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-2">New Probability</h3>
                   <div
                     className="radial-progress text-neutral"
                     style={
                       {
-                        "--value": calculateOption1Chance((token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100,
+                        "--value":
+                          calculateOption1Chance(
+                            (token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()),
+                            token2Reserve ?? BigInt(0),
+                          ) * 100,
                       } as any
                     }
                   >
-                    {(calculateOption1Chance((token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()), token2Reserve ?? BigInt(0)) * 100).toFixed(2) +
-                      "%"}
+                    {(
+                      calculateOption1Chance(
+                        (token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()),
+                        token2Reserve ?? BigInt(0),
+                      ) * 100
+                    ).toFixed(2) + "%"}
                   </div>
                 </div>
               </>
             )}
 
-            <button
-              className="btn btn-sm w-full btn-primary text-white"
-              onClick={async () => {
-                try {
-                  await writeYourContractAsync({
-                    functionName: "sellTokensForEth",
-                    args: [optionIndex, tokenSellAmount],
-                  });
-                } catch (e) {
-                  console.error("Error selling tokens:", e);
-                }
-              }}
-            >
-              Sell
-            </button>
+            <div className="flex gap-2">
+              <GiveAllowance
+                tokenAddress={token1Address as string}
+                spenderAddress={contractAddress ?? ""}
+                amount={inputSellAmount.toString()}
+                showInput={false}
+              />
+              <button
+                className="btn btn-sm flex-1 btn-primary text-white"
+                onClick={async () => {
+                  try {
+                    await writeYourContractAsync({
+                      functionName: "sellTokensForEth",
+                      args: [optionIndex, tokenSellAmount],
+                    });
+                  } catch (e) {
+                    console.error("Error selling tokens:", e);
+                  }
+                }}
+              >
+                Sell
+              </button>
+            </div>
           </div>
         </div>
       </div>
