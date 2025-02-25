@@ -251,7 +251,7 @@ contract PredictionMarketChallenge is Ownable {
      * @param _ethToWithdraw Amount of ETH to withdraw from liquidity pool
      */
     function removeLiquidity(uint256 _ethToWithdraw) external onlyOwner {
-        uint256 amountTokenToBurn = _ethToWithdraw * i_initialTokenValue / PRECISION;
+        uint256 amountTokenToBurn = _ethToWithdraw / i_initialTokenValue * PRECISION;
 
         if (amountTokenToBurn > (i_optionToken1.balanceOf(address(this)))) {
             revert PredictionMarketChallenge__InsufficientTokenReserve();

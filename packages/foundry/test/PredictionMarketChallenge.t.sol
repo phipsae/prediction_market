@@ -165,12 +165,13 @@ contract PredictionMarketChallengeTest is Test {
 
     function testRemoveLiquidity() public {
         uint256 removeAmount = 1 ether;
+        uint256 tokenRemoved = 100 ether;
         uint256 ethCollateralBefore = predictionMarket.s_ethCollateral();
         uint256 token1BalanceBefore = predictionMarket.i_optionToken1().balanceOf(address(predictionMarket));
         uint256 token2BalanceBefore = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
         uint256 oracleBalanceBefore = address(oracle).balance;
 
-        uint256 tokensToBurn = removeAmount * predictionMarket.i_initialTokenValue() / PRECISION;
+        uint256 tokensToBurn = removeAmount / predictionMarket.i_initialTokenValue() * PRECISION;
 
         vm.prank(oracle);
         predictionMarket.removeLiquidity(removeAmount);
@@ -181,6 +182,7 @@ contract PredictionMarketChallengeTest is Test {
         uint256 oracleBalanceAfter = address(oracle).balance;
 
         assertEq(ethCollateralAfter, ethCollateralBefore - removeAmount);
+        assertEq(token1BalanceAfter, token1BalanceBefore - tokenRemoved);
         assertEq(token1BalanceAfter, token1BalanceBefore - tokensToBurn);
         assertEq(token2BalanceAfter, token2BalanceBefore - tokensToBurn);
         assertEq(oracleBalanceAfter, oracleBalanceBefore + removeAmount);
