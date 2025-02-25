@@ -133,6 +133,7 @@ contract PredictionMarketChallengeTest is Test {
 
     function testAddLiquidity() public {
         uint256 addAmount = 10 ether;
+        uint256 expectedAdditionalToken = 1000 ether;
         uint256 ethCollateralBefore = predictionMarket.s_ethCollateral();
         uint256 token1BalanceBefore = predictionMarket.i_optionToken1().balanceOf(address(predictionMarket));
         uint256 token2BalanceBefore = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
@@ -145,8 +146,13 @@ contract PredictionMarketChallengeTest is Test {
         uint256 token2BalanceAfter = predictionMarket.i_optionToken2().balanceOf(address(predictionMarket));
 
         assertEq(ethCollateralAfter, ethCollateralBefore + addAmount);
-        assertEq(token1BalanceAfter, token1BalanceBefore + (addAmount * predictionMarket.i_initialTokenValue()));
-        assertEq(token2BalanceAfter, token2BalanceBefore + (addAmount * predictionMarket.i_initialTokenValue()));
+        assertEq(token1BalanceAfter, token1BalanceBefore + expectedAdditionalToken);
+        assertEq(
+            token1BalanceAfter, token1BalanceBefore + (addAmount / predictionMarket.i_initialTokenValue() * PRECISION)
+        );
+        assertEq(
+            token2BalanceAfter, token2BalanceBefore + (addAmount / predictionMarket.i_initialTokenValue() * PRECISION)
+        );
 
         // Test can't add liquidity after prediction is resolved
         vm.prank(oracle);

@@ -35,8 +35,7 @@ contract PredictionMarketChallenge is Ownable {
 
     uint256 private constant PRECISION = 1e18;
 
-    address public immutable i_oracle; // is owner of contract as well
-    // TODO: add owner of contract
+    address public immutable i_oracle;
     uint256 public immutable i_initialTokenValue;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
@@ -86,10 +85,10 @@ contract PredictionMarketChallenge is Ownable {
         i_initialTokenValue = _initialTokenValue;
         s_ethCollateral = msg.value;
 
-        uint256 initialTokenRatio = (msg.value * PRECISION) / _initialTokenValue;
+        uint256 initialTokenAmount = (msg.value * PRECISION) / _initialTokenValue;
 
-        i_optionToken1 = new PredictionMarketToken("Yes", "Y", initialTokenRatio);
-        i_optionToken2 = new PredictionMarketToken("No", "N", initialTokenRatio);
+        i_optionToken1 = new PredictionMarketToken("Yes", "Y", initialTokenAmount);
+        i_optionToken2 = new PredictionMarketToken("No", "N", initialTokenAmount);
     }
 
     /**
@@ -243,8 +242,8 @@ contract PredictionMarketChallenge is Ownable {
         }
         s_ethCollateral += msg.value;
 
-        i_optionToken1.mint(address(this), msg.value * i_initialTokenValue);
-        i_optionToken2.mint(address(this), msg.value * i_initialTokenValue);
+        i_optionToken1.mint(address(this), msg.value * PRECISION / i_initialTokenValue);
+        i_optionToken2.mint(address(this), msg.value * PRECISION / i_initialTokenValue);
     }
 
     /**
