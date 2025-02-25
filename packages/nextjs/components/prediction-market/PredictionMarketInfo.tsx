@@ -1,6 +1,6 @@
 "use client";
 
-import { ProbabilityDisplay } from "./ProabilityDisplay";
+import { ProbabilityDisplay } from "./ProbabilityDisplay";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionMarketInfo() {
