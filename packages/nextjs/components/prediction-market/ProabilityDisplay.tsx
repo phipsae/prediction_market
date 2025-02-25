@@ -1,15 +1,14 @@
-import { formatEther } from "viem";
-import { useReadContract } from "wagmi";
-
 export function ProbabilityDisplay({
   token1Reserve,
   token2Reserve,
   tokenAddress,
+  optionIndex,
   label,
 }: {
   token1Reserve: bigint;
   token2Reserve: bigint;
   tokenAddress: string;
+  optionIndex: number;
   label?: string;
 }) {
   const erc20Abi = [
@@ -28,7 +27,7 @@ export function ProbabilityDisplay({
     functionName: "totalSupply",
   });
 
-  const calculateProbability = (_token1Reserve: bigint, _token2Reserve: bigint) => {
+  const calculateChance = (_token1Reserve: bigint, _token2Reserve: bigint, _optionIndex: number) => {
     if (_token1Reserve === undefined || _token2Reserve === undefined || totalSupply === undefined) return 0;
 
     if (_token1Reserve === totalSupply && _token2Reserve === totalSupply) return 0.5;
@@ -38,10 +37,10 @@ export function ProbabilityDisplay({
 
     const option1Chance = token1Sold / (token1Sold + token2Sold);
 
-    return option1Chance;
+    return _optionIndex === 0 ? option1Chance : 1 - option1Chance;
   };
 
-  const probability = calculateProbability(token1Reserve, token2Reserve);
+  const probability = calculateChance(token1Reserve, token2Reserve, optionIndex);
 
   return (
     <div className="bg-base-200 p-4 rounded-lg">

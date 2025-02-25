@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ProbabilityDisplay } from "./ProbabilityDisplay";
 import { formatEther, parseEther } from "viem";
 import { useReadContract } from "wagmi";
 import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
@@ -95,19 +96,11 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
   return (
     <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
-      <div className="bg-base-200 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Probability</h3>
-        <div
-          className="radial-progress text-neutral"
-          style={
-            {
-              "--value": calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100,
-            } as any
-          }
-        >
-          {(calculateOption1Chance(token1Reserve ?? BigInt(0), token2Reserve ?? BigInt(0)) * 100).toFixed(2) + "%"}
-        </div>
-      </div>
+      <ProbabilityDisplay
+        token1Reserve={token1Reserve ?? BigInt(0)}
+        token2Reserve={token2Reserve ?? BigInt(0)}
+        tokenAddress={token1Address as string}
+      />
 
       <div className="flex justify-center">
         <TokenBalance tokenAddress={token1Address as string} option={option as string} />
@@ -128,28 +121,14 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
             {totalPriceInEth && (
               <>
                 <div className="text-sm">ETH needed: {formatEther(totalPriceInEth)}</div>
-                <div className="bg-base-200 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2">New Probability</h3>
-                  <div
-                    className="radial-progress text-neutral"
-                    style={
-                      {
-                        "--value":
-                          calculateOption1Chance(
-                            (token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()),
-                            token2Reserve ?? BigInt(0),
-                          ) * 100,
-                      } as any
-                    }
-                  >
-                    {(
-                      calculateOption1Chance(
-                        (token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString()),
-                        token2Reserve ?? BigInt(0),
-                      ) * 100
-                    ).toFixed(2) + "%"}
-                  </div>
-                </div>
+
+                <ProbabilityDisplay
+                  token1Reserve={(token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString())}
+                  token2Reserve={token2Reserve ?? BigInt(0)}
+                  tokenAddress={token1Address as string}
+                  label="New Probability"
+                />
+
                 {totalSupply && (
                   <div className="text-sm">
                     You can get: Ξ{formatEther(etherToReceive)}
@@ -192,28 +171,12 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
             {sellTotalPriceInEth && (
               <>
                 <div className="text-sm">ETH to receive: {formatEther(sellTotalPriceInEth)}</div>
-                <div className="bg-base-200 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2">New Probability</h3>
-                  <div
-                    className="radial-progress text-neutral"
-                    style={
-                      {
-                        "--value":
-                          calculateOption1Chance(
-                            (token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()),
-                            token2Reserve ?? BigInt(0),
-                          ) * 100,
-                      } as any
-                    }
-                  >
-                    {(
-                      calculateOption1Chance(
-                        (token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString()),
-                        token2Reserve ?? BigInt(0),
-                      ) * 100
-                    ).toFixed(2) + "%"}
-                  </div>
-                </div>
+                <ProbabilityDisplay
+                  token1Reserve={(token1Reserve ?? BigInt(0)) + parseEther((inputSellAmount || BigInt(0)).toString())}
+                  token2Reserve={token2Reserve ?? BigInt(0)}
+                  tokenAddress={token1Address as string}
+                  label="New Probability"
+                />
               </>
             )}
 
