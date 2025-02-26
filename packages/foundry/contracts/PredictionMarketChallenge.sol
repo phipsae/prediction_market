@@ -342,7 +342,8 @@ contract PredictionMarketChallenge is Ownable {
             address optionToken2,
             address winningToken,
             uint256 ethCollateral,
-            uint256 lpTradingRevenue
+            uint256 lpTradingRevenue,
+            address predictionMarketOwner
         )
     {
         question = i_question;
@@ -358,5 +359,6 @@ contract PredictionMarketChallenge is Ownable {
         winningToken = address(s_winningToken);
         ethCollateral = s_ethCollateral;
         lpTradingRevenue = s_lpTradingRevenue;
+        predictionMarketOwner = owner();
     }
 }
