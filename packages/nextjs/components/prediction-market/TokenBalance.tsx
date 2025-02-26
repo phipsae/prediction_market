@@ -27,7 +27,7 @@ export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; o
 
   const { data: tokenValue } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",
-    functionName: "i_initialTokenRatio",
+    functionName: "i_initialTokenValue",
   });
 
   const selectedNetwork = useSelectedNetwork();

@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     PredictionMarketChallenge: {
-      address: "0x107d6f280a05f07b59039143ca21e3f917aafa30",
+      address: "0x5b66e49c1f3f0be211c0530736a0519c746678a3",
       abi: [
         {
           type: "constructor",
@@ -22,21 +22,20 @@ const deployedContracts = {
               type: "string",
               internalType: "string",
             },
+            {
+              name: "_initialTokenValue",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
           stateMutability: "payable",
         },
         {
           type: "function",
-          name: "INITIAL_TOKEN_AMOUNT",
+          name: "addLiquidity",
           inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
+          outputs: [],
+          stateMutability: "payable",
         },
         {
           type: "function",
@@ -106,7 +105,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "i_initialTokenRatio",
+          name: "i_initialTokenValue",
           inputs: [],
           outputs: [
             {
@@ -171,6 +170,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "prediction",
           inputs: [],
           outputs: [
@@ -195,7 +207,7 @@ const deployedContracts = {
               internalType: "address",
             },
             {
-              name: "initialTokenRatio",
+              name: "initialTokenValue",
               type: "uint256",
               internalType: "uint256",
             },
@@ -239,6 +251,11 @@ const deployedContracts = {
               type: "uint256",
               internalType: "uint256",
             },
+            {
+              name: "predictionMarketOwner",
+              type: "address",
+              internalType: "address",
+            },
           ],
           stateMutability: "view",
         },
@@ -252,6 +269,26 @@ const deployedContracts = {
               internalType: "uint256",
             },
           ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "removeLiquidity",
+          inputs: [
+            {
+              name: "_ethToWithdraw",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
           outputs: [],
           stateMutability: "nonpayable",
         },
@@ -339,6 +376,38 @@ const deployedContracts = {
           stateMutability: "nonpayable",
         },
         {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
           type: "event",
           name: "TokensPurchased",
           inputs: [
@@ -424,6 +493,28 @@ const deployedContracts = {
             },
           ],
           anonymous: false,
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
         },
         {
           type: "error",
@@ -519,7 +610,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1740479658.json",
+      deploymentFile: "run-1740568571.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
