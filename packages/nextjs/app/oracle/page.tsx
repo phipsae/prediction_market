@@ -6,7 +6,7 @@ import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
   title: "Oracle",
-  description: "Easy Oracle implmentation",
+  description: "Easy Oracle implementation",
 });
 
 const Oracle: NextPage = () => {
