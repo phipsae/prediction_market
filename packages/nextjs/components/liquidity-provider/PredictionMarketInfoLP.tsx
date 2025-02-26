@@ -66,14 +66,14 @@ export function PredictionMarketInfoLP() {
           <div className="stats shadow w-full">
             <div className="stat">
               <div className="text-xl">Prediciton Market Collateral</div>
-              (Amount of ETH that goes the winning token)
+              (Amount of ETH that goes to the winning token)
               <div className="stat-value text-primary pt-2">
                 {Number(formatEther(BigInt(ethCollateral ?? 0))).toFixed(4)} ETH
               </div>
             </div>
             <div className="stat">
               <div className="text-xl">LP Revenue</div>
-              (Token revenue when token get bought/sold)
+              (Token revenue when token gets bought/sold)
               <div className="stat-value text-primary pt-2">
                 {Number(formatEther(BigInt(lpTradingRevenue ?? 0))).toFixed(4)} ETH
               </div>
