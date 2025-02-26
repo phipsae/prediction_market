@@ -7,7 +7,7 @@ import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
   title: "Liquidity Provider of Prediction Market",
-  description: "Easy implmentation of Liquidity Provider for Prediction Market",
+  description: "Easy implementation of Liquidity Provider for Prediction Market",
 });
 
 const LiquidityProvider: NextPage = () => {
