@@ -63,9 +63,6 @@ export function Redeem() {
       {isReported && tokenAddress && winningOption && (
         <TokenBalance tokenAddress={tokenAddress as string} option={winningOption as string} />
       )}
-      {tokenAddress && contractAddress && (
-        <GiveAllowance tokenAddress={tokenAddress as string} spenderAddress={contractAddress} />
-      )}
 
       <div className="flex gap-4">
         <input
