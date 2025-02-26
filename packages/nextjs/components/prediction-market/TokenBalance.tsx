@@ -40,7 +40,7 @@ export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; o
     },
   });
 
-  const tokenBalanceValue = balance && tokenValue ? (balance * tokenValue) / BigInt(10n ** 36n) : 0n;
+  const tokenBalanceValue = balance && tokenValue ? (balance * tokenValue) / BigInt(10n ** 18n) : 0n;
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey });
