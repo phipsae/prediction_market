@@ -12,7 +12,7 @@ export function PredictionMarketInfo() {
 
   const { data: initialTokenAmount, isLoading: isLoadingInitialTokenAmount } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",
-    functionName: "INITIAL_TOKEN_AMOUNT",
+    functionName: "i_initialTokenValue",
   });
 
   const calculateOption1Chance = (_token1Reserve: bigint, _token2Reserve: bigint) => {

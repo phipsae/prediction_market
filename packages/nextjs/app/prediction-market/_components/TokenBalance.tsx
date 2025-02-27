@@ -1,7 +1,7 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatEther } from "viem";
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
 import { useSelectedNetwork } from "~~/hooks/scaffold-eth";
