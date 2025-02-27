@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
-import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
 import { parseEther } from "viem";
-import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+
+// import {useDeployedContractInfo} from "~~/hooks/scaffold-eth";
 
 export function Redeem() {
   const [amount, setAmount] = useState<bigint>(BigInt(0));
   const tokenAmount = parseEther((amount || BigInt(0)).toString());
 
-  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
-  const contractAddress = deployedContractData?.address;
+  // const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
+  // const contractAddress = deployedContractData?.address;
 
   const { data: prediction, isLoading } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",

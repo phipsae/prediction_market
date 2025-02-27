@@ -40,6 +40,18 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
     watch: true,
   });
 
+  const { data: getBuyPriceInEth } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "getBuyPriceInEth",
+    args: [optionIndex, 1000000000000000000n],
+  });
+
+  const { data: getSellPriceInEth } = useScaffoldReadContract({
+    contractName: "PredictionMarketChallenge",
+    functionName: "getSellPriceInEth",
+    args: [optionIndex, 1000000000000000000n],
+  });
+
   const erc20Abi = [
     {
       inputs: [],
@@ -88,11 +100,13 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
         token2Reserve={token2Reserve ?? BigInt(0)}
         tokenAddress={token1Address as string}
       />
-
+      {getBuyPriceInEth && <p>Buy Price: {Number(formatEther(getBuyPriceInEth)).toFixed(6)} ETH</p>}
+      (for the next token)
+      {getSellPriceInEth && <p>Sell Price: {Number(formatEther(getSellPriceInEth)).toFixed(6)} ETH</p>}
+      (for the next token)
       <div className="flex justify-center">
         <TokenBalance tokenAddress={token1Address as string} option={option as string} />
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         {/* Buy Section */}
         <div className={`bg-${colorScheme}-50 p-3 rounded-lg`}>

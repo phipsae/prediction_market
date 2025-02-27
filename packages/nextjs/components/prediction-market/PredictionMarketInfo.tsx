@@ -1,6 +1,7 @@
 "use client";
 
 import { ProbabilityDisplay } from "./ProbabilityDisplay";
+import { formatEther } from "viem";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionMarketInfo() {

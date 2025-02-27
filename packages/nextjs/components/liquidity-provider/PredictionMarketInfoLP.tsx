@@ -13,9 +13,15 @@ export function PredictionMarketInfoLP() {
     functionName: "prediction",
   });
 
-  const { data: totalSupply, queryKey } = useReadContract({
+  const { data: totalSupply1, queryKey } = useReadContract({
     abi: erc20Abi,
     address: prediction?.[8] as string,
+    functionName: "totalSupply",
+  });
+
+  const { data: totalSupply2, queryKey: queryKey2 } = useReadContract({
+    abi: erc20Abi,
+    address: prediction?.[9] as string,
     functionName: "totalSupply",
   });
 
@@ -31,7 +37,8 @@ export function PredictionMarketInfoLP() {
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey });
-  }, [blockNumber, queryClient, queryKey]);
+    queryClient.invalidateQueries({ queryKey: queryKey2 });
+  }, [blockNumber, queryClient, queryKey, queryKey2]);
 
   if (isLoading)
     return (
@@ -111,14 +118,14 @@ export function PredictionMarketInfoLP() {
               Amount of {predictionOutcome1} <span className="font-bold">tokens sold</span>
             </h3>
             <div className="stat-value text-lg">
-              {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
+              {Number(formatEther(BigInt(totalSupply1 ?? 0) - BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
             </div>
             <h3 className="text-lg mb-2 pt-2">
               (Value of tokens ETH{" "}
               {Number(
                 formatEther(
                   BigInt(
-                    ((BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
+                    ((BigInt(totalSupply1 ?? 0) - BigInt(token1Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
                   ),
                 ),
               ).toFixed(2)}{" "}
@@ -143,14 +150,14 @@ export function PredictionMarketInfoLP() {
               Amount of {predictionOutcome2} <span className="font-bold">tokens sold</span>
             </h3>
             <div className="stat-value text-lg">
-              {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
+              {Number(formatEther(BigInt(totalSupply2 ?? 0) - BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
             </div>
             <h3 className="text-lg mb-2 pt-2">
               (Value of tokens ETH{" "}
               {Number(
                 formatEther(
                   BigInt(
-                    ((BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
+                    ((BigInt(totalSupply2 ?? 0) - BigInt(token2Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
                   ),
                 ),
               ).toFixed(2)}{" "}
