@@ -200,9 +200,7 @@ contract PredictionMarketChallenge is Ownable {
             revert PredictionMarketChallenge__InsufficientWinningTokens();
         }
 
-        /// TODO: check if really needed
-        uint256 totalSupply = s_winningToken.totalSupply();
-        uint256 ethToReceive = (_amount * s_ethCollateral) / totalSupply;
+        uint256 ethToReceive = (_amount * i_initialTokenValue) / PRECISION;
 
         s_ethCollateral -= ethToReceive;
 
