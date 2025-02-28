@@ -28,10 +28,6 @@ export const menuLinks: HeaderMenuLink[] = [
     href: "/oracle",
   },
   {
-    label: "Prediction Market",
-    href: "/prediction-market",
-  },
-  {
     label: "Debug Contracts",
     href: "/debug",
     icon: <BugAntIcon className="h-4 w-4" />,

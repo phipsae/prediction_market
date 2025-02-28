@@ -35,11 +35,11 @@ export function OverviewBuySellShares() {
       ) : (
         <div className="flex gap-6">
           <div className="flex-1 bg-base-200 rounded-lg p-4 border-4 border-green-500">
-            <h3 className="text-xl font-semibold text-center mb-4 text-green-500">{prediction[1]} Option</h3>
+            <h3 className="text-xl font-semibold text-center mb-4 text-green-500">&quot;{prediction[1]}&quot; Token</h3>
             <PredictionBuySellShare optionIndex={0} colorScheme="green" />
           </div>
           <div className="flex-1 bg-base-200 rounded-lg p-4 border-4 border-red-500">
-            <h3 className="text-xl font-semibold text-center mb-4 text-red-500">{prediction[2]} Option</h3>
+            <h3 className="text-xl font-semibold text-center mb-4 text-red-500">&quot;{prediction[2]}&quot; Token</h3>
             <PredictionBuySellShare optionIndex={1} colorScheme="red" />
           </div>
         </div>

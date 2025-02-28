@@ -105,26 +105,26 @@ export function PredictionMarketInfoLP() {
 
         {!isReported ? (
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-base-200 p-4 rounded-lg">
-              <h2 className="text-2xl font-semibold mb-2">{predictionOutcome1}</h2>
+            <div className="bg-base-200 p-4 rounded-lg border-4 border-green-500">
+              <h2 className="text-2xl font-semibold mb-2">&quot;{predictionOutcome1}&quot; Token</h2>
               <h3 className="text-lg mb-2">
-                Amount of {predictionOutcome1} tokens <span className="font-bold">hold by prediction market</span>
+                Amount of {predictionOutcome1} tokens <span className="font-bold">held by prediction market</span>
               </h3>
               <div className="stat-value text-lg">
                 {Number(formatEther(BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
               </div>
-              <h3 className="text-lg mb-2 pt-2">
+              <h3 className="text-sm mb-2 pt-2">
                 (Value of tokens{" "}
                 {Number(formatEther(BigInt(((token1Reserve ?? 0) * (tokenValue ?? 0)) / BigInt(10 ** 18)))).toFixed(2)}{" "}
                 ETH if Oracle reports {predictionOutcome1})
               </h3>
-              <h3 className="text-lg mb-2 border-t pt-2">
+              <h3 className="text-lg mb-2 border-t-4 pt-2">
                 Amount of {predictionOutcome1} <span className="font-bold">tokens sold</span>
               </h3>
               <div className="stat-value text-lg">
                 {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
               </div>
-              <h3 className="text-lg mb-2 pt-2">
+              <h3 className="text-sm mb-2 pt-2">
                 (Value of tokens{" "}
                 {Number(
                   formatEther(
@@ -137,26 +137,26 @@ export function PredictionMarketInfoLP() {
               </h3>
             </div>
 
-            <div className="bg-base-200 p-4 rounded-lg">
-              <h2 className="text-2xl font-semibold mb-2">{predictionOutcome2}</h2>
+            <div className="bg-base-200 p-4 rounded-lg border-4 border-red-500">
+              <h2 className="text-2xl font-semibold mb-2">&quot;{predictionOutcome2}&quot; Token</h2>
               <h3 className="text-lg mb-2">
-                Amount of {predictionOutcome2} tokens <span className="font-bold">hold by prediction market</span>
+                Amount of {predictionOutcome2} tokens <span className="font-bold">held by prediction market</span>
               </h3>
               <div className="stat-value text-lg">
                 {Number(formatEther(BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
               </div>
-              <h3 className="text-lg mb-2 pt-2">
+              <h3 className="text-sm mb-2 pt-2">
                 (Value of tokens{" "}
                 {Number(formatEther(BigInt(((token2Reserve ?? 0) * (tokenValue ?? 0)) / BigInt(10 ** 18)))).toFixed(2)}{" "}
                 ETH if Oracle reports {predictionOutcome2})
               </h3>
-              <h3 className="text-lg mb-2 border-t pt-2">
+              <h3 className="text-lg mb-2 border-t-4 pt-2">
                 Amount of {predictionOutcome2} <span className="font-bold">tokens sold</span>
               </h3>
               <div className="stat-value text-lg">
                 {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
               </div>
-              <h3 className="text-lg mb-2 pt-2">
+              <h3 className="text-sm mb-2 pt-2">
                 (Value of tokens{" "}
                 {Number(
                   formatEther(
@@ -183,7 +183,7 @@ export function PredictionMarketInfoLP() {
               ).toFixed(4)}{" "}
               ETH
             </h3>
-            <h3 className="text-lg mb-2">
+            <h3 className="text-sm mb-2 pt-2">
               Value of {winningOption} tokens held by users:{" "}
               {Number(
                 formatEther(
@@ -197,8 +197,9 @@ export function PredictionMarketInfoLP() {
               ).toFixed(4)}{" "}
               ETH
             </h3>
-            <h3 className="text-lg mb-2">
-              {winningToken === optionToken1 ? predictionOutcome2 : predictionOutcome1} tokens have no value
+            <h3 className="text-sm mb-2">
+              &quot;{winningToken === optionToken1 ? predictionOutcome2 : predictionOutcome1}&quot; tokens have no value
+              anymore
             </h3>
           </div>
         )}

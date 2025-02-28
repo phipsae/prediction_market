@@ -39,10 +39,10 @@ export function PredictionMarketInfo() {
         <div className="bg-base-200 p-4 rounded-lg">
           <div className="flex justify-between items-center">
             <div>
+              <p className="text-base-content text-xl font-bold">{question}</p>
               <div className={`badge ${isReported ? "badge-success" : "badge-warning"}`}>
                 {isReported ? "Reported" : "In Progress"}
               </div>
-              <p className="text-base-content">{question}</p>
             </div>
             <ProbabilityDisplay
               token1Reserve={BigInt(prediction[5])}

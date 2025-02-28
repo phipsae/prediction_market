@@ -89,6 +89,8 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
   return (
     <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+      <div className="flex justify-center">Tokens available to buy: {formatEther(token1Reserve ?? BigInt(0))}</div>
+
       <ProbabilityDisplay
         token1Reserve={token1Reserve ?? BigInt(0)}
         token2Reserve={token2Reserve ?? BigInt(0)}
@@ -104,7 +106,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
       <div className="grid grid-cols-2 gap-4">
         {/* Buy Section */}
         <div className={`bg-${colorScheme}-50 p-3 rounded-lg`}>
-          <h2 className={`text-lg font-semibold text-${colorScheme}-800 mb-2`}>Buy {option}</h2>
+          <h2 className={`text-lg font-semibold text-${colorScheme}-800 mb-2`}>Buy &quot;{option}&quot;</h2>
           <div className="space-y-2">
             <input
               type="number"
@@ -128,8 +130,9 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
                 {totalSupply && (
                   <div className="text-sm">
-                    For {formatEther(totalPriceInEth)} ETH you have the chance to win Ξ{formatEther(etherToReceive)}{" "}
-                    (upside Ξ{formatEther(etherToWin)})
+                    For {Number(formatEther(totalPriceInEth)).toFixed(4)} ETH you have the chance to win Ξ
+                    {Number(formatEther(etherToReceive)).toFixed(4)} (upside Ξ
+                    {Number(formatEther(etherToWin)).toFixed(4)})
                   </div>
                 )}
               </>
@@ -156,7 +159,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
         </div>
 
         <div className="bg-base-100 p-3 rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Sell {option}</h2>
+          <h2 className="text-lg font-semibold mb-2">Sell &quot;{option}&quot;</h2>
           <div className="space-y-2">
             <input
               type="number"

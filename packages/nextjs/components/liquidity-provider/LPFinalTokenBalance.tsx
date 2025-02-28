@@ -47,7 +47,7 @@ export function LPFinalTokenBalance({
       <div className="flex flex-row items-center gap-2">
         <h3 className="text-lg text-center font-medium flex flex-col gap-1">
           <div>
-            Redeembale {winningOption} Token Balance:{" "}
+            Redeembale &quot;{winningOption}&quot; Token Balance:{" "}
             <span className="text-gray-700">{balance ? formatEther(balance) : "0"} tokens</span> worth{" "}
             {tokenValue && balance ? formatEther((tokenValue * balance) / BigInt(10 ** 18)) : "0"} ETH
           </div>
