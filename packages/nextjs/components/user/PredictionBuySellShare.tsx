@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ProbabilityDisplay } from "./ProbabilityDisplay";
 import { formatEther, parseEther } from "viem";
 import { useReadContract } from "wagmi";
-import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
-import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
+import { GiveAllowance } from "~~/components/user/GiveAllowance";
+import { TokenBalance } from "~~/components/user/TokenBalance";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionIndex: number; colorScheme: string }) {
@@ -75,6 +75,12 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
   const token1Reserve = prediction[5 + optionIndex] as bigint;
   const token2Reserve = prediction[6 - optionIndex] as bigint;
   const ethCollateral = prediction[11];
+  const isReported = prediction[7];
+  const predictionOutcome1 = prediction[1];
+  const predictionOutcome2 = prediction[2];
+  const optionToken1 = prediction[8];
+  const winningToken = prediction[10];
+  const winningOption = winningToken === optionToken1 ? predictionOutcome1 : predictionOutcome2;
 
   const etherToReceive = totalSupply
     ? (parseEther((inputBuyAmount || BigInt(0)).toString()) * ethCollateral) / totalSupply
@@ -87,6 +93,8 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
         token1Reserve={token1Reserve ?? BigInt(0)}
         token2Reserve={token2Reserve ?? BigInt(0)}
         tokenAddress={token1Address as string}
+        isReported={isReported}
+        winningOption={winningOption}
       />
 
       <div className="flex justify-center">
@@ -107,19 +115,21 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
             {totalPriceInEth && (
               <>
-                <div className="text-sm">ETH needed: {formatEther(totalPriceInEth)}</div>
+                <div className="text-sm"></div>
 
                 <ProbabilityDisplay
                   token1Reserve={(token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString())}
                   token2Reserve={token2Reserve ?? BigInt(0)}
                   tokenAddress={token1Address as string}
                   label="New Probability"
+                  isReported={isReported}
+                  winningOption={winningOption}
                 />
 
                 {totalSupply && (
                   <div className="text-sm">
-                    You can get: Ξ{formatEther(etherToReceive)}
-                    (winning Ξ{formatEther(etherToWin)})
+                    For {formatEther(totalPriceInEth)} ETH you have the chance to win Ξ{formatEther(etherToReceive)}{" "}
+                    (upside Ξ{formatEther(etherToWin)})
                   </div>
                 )}
               </>
@@ -163,6 +173,8 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
                   token2Reserve={token2Reserve ?? BigInt(0)}
                   tokenAddress={token1Address as string}
                   label="New Probability"
+                  isReported={isReported}
+                  winningOption={winningOption}
                 />
               </>
             )}

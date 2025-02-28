@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
-import { OverviewBuySellShares } from "~~/components/prediction-market/OverviewBuySellShares";
-import { PredictionMarketInfo } from "~~/components/prediction-market/PredictionMarketInfo";
+import { OverviewBuySellShares } from "~~/components/user/OverviewBuySellShares";
+import { PredictionMarketInfo } from "~~/components/user/PredictionMarketInfo";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({

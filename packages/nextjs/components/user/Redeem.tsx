@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { parseEther } from "viem";
-import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
+import { TokenBalance } from "~~/components/user/TokenBalance";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export function Redeem() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { LPFinalTokenBalance } from "~~/components/liquidity-provider/LPFinalTokenBalance";
-import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
+import { TokenBalance } from "~~/components/user/TokenBalance";
 import { useScaffoldContract, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export function ResolveMarketAndWithdraw() {

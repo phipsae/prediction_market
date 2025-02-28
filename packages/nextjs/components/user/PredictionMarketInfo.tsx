@@ -26,7 +26,12 @@ export function PredictionMarketInfo() {
     );
 
   const question = prediction[0];
-  const reported = prediction[7];
+  const predictionOutcome1 = prediction[1];
+  const predictionOutcome2 = prediction[2];
+  const isReported = prediction[7];
+  const optionToken1 = prediction[8];
+  const winningToken = prediction[10];
+  const winningOption = winningToken === optionToken1 ? predictionOutcome1 : predictionOutcome2;
 
   return (
     <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
@@ -34,8 +39,8 @@ export function PredictionMarketInfo() {
         <div className="bg-base-200 p-4 rounded-lg">
           <div className="flex justify-between items-center">
             <div>
-              <div className={`badge ${reported ? "badge-success" : "badge-warning"}`}>
-                {reported ? "Reported" : "In Progress"}
+              <div className={`badge ${isReported ? "badge-success" : "badge-warning"}`}>
+                {isReported ? "Reported" : "In Progress"}
               </div>
               <p className="text-base-content">{question}</p>
             </div>
@@ -44,6 +49,8 @@ export function PredictionMarketInfo() {
               token2Reserve={BigInt(prediction[6])}
               tokenAddress={prediction[8]}
               label="Chance"
+              isReported={isReported}
+              winningOption={winningOption}
             />
           </div>
         </div>

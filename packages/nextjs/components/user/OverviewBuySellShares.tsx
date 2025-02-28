@@ -1,7 +1,7 @@
 "use client";
 
-import { PredictionBuySellShare } from "~~/components/prediction-market/PredictionBuySellShare";
-import { Redeem } from "~~/components/prediction-market/Redeem";
+import { PredictionBuySellShare } from "~~/components/user/PredictionBuySellShare";
+import { Redeem } from "~~/components/user/Redeem";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export function OverviewBuySellShares() {

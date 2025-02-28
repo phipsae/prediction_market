@@ -3,7 +3,7 @@ import { AddRemoveLiquidity } from "~~/components/liquidity-provider/AddRemoveLi
 import { LPAddress } from "~~/components/liquidity-provider/LPAddress";
 import { PredictionMarketInfoLP } from "~~/components/liquidity-provider/PredictionMarketInfoLP";
 import { ResolveMarketAndWithdraw } from "~~/components/liquidity-provider/ResolveMarketAndWithdraw";
-import { PredictionMarketInfo } from "~~/components/prediction-market/PredictionMarketInfo";
+import { PredictionMarketInfo } from "~~/components/user/PredictionMarketInfo";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
