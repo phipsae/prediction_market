@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 import { AddRemoveLiquidity } from "~~/components/liquidity-provider/AddRemoveLiquidty";
 import { LPAddress } from "~~/components/liquidity-provider/LPAddress";
 import { PredictionMarketInfoLP } from "~~/components/liquidity-provider/PredictionMarketInfoLP";
+import { ResolveMarketAndWithdraw } from "~~/components/liquidity-provider/ResolveMarketAndWithdraw";
 import { PredictionMarketInfo } from "~~/components/prediction-market/PredictionMarketInfo";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
@@ -29,6 +30,9 @@ const LiquidityProvider: NextPage = () => {
                 </div>
                 <div>
                   <AddRemoveLiquidity />
+                </div>
+                <div>
+                  <ResolveMarketAndWithdraw />
                 </div>
               </div>
             </div>

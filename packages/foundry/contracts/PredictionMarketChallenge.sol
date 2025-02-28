@@ -215,6 +215,44 @@ contract PredictionMarketChallenge is Ownable {
     }
 
     /**
+     * @notice Owner of contract can redeem winning tokens held by the contract after prediction is resolved and get ETH from the contract including LP revenue and collateral back
+     * @dev Only callable by the owner
+     * @return ethRedeemed The amount of ETH redeemed
+     */
+    function resolveMarketAndWithdraw() external onlyOwner returns (uint256 ethRedeemed) {
+        if (!s_isReported) {
+            revert PredictionMarketChallenge__PredictionNotResolved();
+        }
+
+        uint256 contractWinningTokens = s_winningToken.balanceOf(address(this));
+        if (contractWinningTokens >= 0) {
+            ethRedeemed = (contractWinningTokens * i_initialTokenValue) / PRECISION;
+
+            if (ethRedeemed > s_ethCollateral) {
+                ethRedeemed = s_ethCollateral;
+            }
+
+            s_ethCollateral -= ethRedeemed;
+        }
+
+        // Add LP revenue to the amount being sent to owner
+        uint256 lpRevenue = s_lpTradingRevenue;
+        uint256 totalEthToSend = ethRedeemed + lpRevenue;
+
+        // Reset LP revenue
+        s_lpTradingRevenue = 0;
+
+        s_winningToken.burn(address(this), contractWinningTokens);
+
+        (bool success,) = msg.sender.call{ value: totalEthToSend }("");
+        if (!success) {
+            revert PredictionMarketChallenge__ETHTransferFailed();
+        }
+
+        return ethRedeemed;
+    }
+
+    /**
      * @notice Calculate the total ETH price for buying tokens
      * @param _option The option (YES or NO) to buy tokens for
      * @param _tradingAmount The amount of tokens to buy

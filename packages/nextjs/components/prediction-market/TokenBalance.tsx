@@ -2,20 +2,19 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatEther } from "viem";
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
+import { erc20Abi } from "~~/components/constants";
 import { useSelectedNetwork } from "~~/hooks/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
-const erc20Abi = [
-  {
-    inputs: [{ name: "account", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-
-export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; option: string }) {
+export function TokenBalance({
+  tokenAddress,
+  option,
+  redeem,
+}: {
+  tokenAddress: string;
+  option: string;
+  redeem: boolean;
+}) {
   const { address } = useAccount();
 
   const { data: balance, queryKey } = useReadContract({
@@ -25,10 +24,13 @@ export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; o
     args: [address ?? "0x0"],
   });
 
-  const { data: tokenValue } = useScaffoldReadContract({
+  const { data: prediction } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",
-    functionName: "i_initialTokenValue",
+    functionName: "prediction",
   });
+
+  const tokenValue = prediction?.[4];
+  const isReported = prediction?.[7];
 
   const selectedNetwork = useSelectedNetwork();
   const queryClient = useQueryClient();
@@ -48,18 +50,23 @@ export function TokenBalance({ tokenAddress, option }: { tokenAddress: string; o
   }, [blockNumber]);
 
   return (
-    <div>
-      <div className="flex flex-row items-center gap-2">
-        <h3 className="text-lg text-center font-medium flex flex-col gap-1">
-          <div>
-            Token Balance of {option}:{" "}
-            <span className="text-gray-700">{balance ? formatEther(balance) : "0"} tokens</span>
+    <>
+      {isReported && (
+        <div>
+          <div className="flex flex-row items-center gap-2">
+            <h3 className="text-lg text-center font-medium flex flex-col gap-1">
+              <div>
+                Token Balance of {option}:{" "}
+                <span className="text-gray-700">{balance ? formatEther(balance) : "0"} tokens</span>
+              </div>
+              <div className="text-gray-700">
+                {tokenBalanceValue ? formatEther(tokenBalanceValue) : "0"}{" "}
+                {redeem ? "ETH worth" : "ETH worth in case of win"}
+              </div>
+            </h3>
           </div>
-          <div className="text-gray-700">
-            {tokenBalanceValue ? formatEther(tokenBalanceValue) : "0"} ETH in case of win
-          </div>
-        </h3>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

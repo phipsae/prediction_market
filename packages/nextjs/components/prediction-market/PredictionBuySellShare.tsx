@@ -90,7 +90,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
       />
 
       <div className="flex justify-center">
-        <TokenBalance tokenAddress={token1Address as string} option={option as string} />
+        <TokenBalance tokenAddress={token1Address as string} option={option as string} redeem={false} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
