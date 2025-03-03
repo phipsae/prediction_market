@@ -29,7 +29,7 @@ contract DeployPredictionMarketChallenge is ScaffoldETHDeploy {
 
         uint256 initialLiquidity = 1 ether;
         uint256 initialTokenValue = 0.01 ether;
-        string memory question = "Will ETH reach 20k by the end of the year 2025";
+        string memory question = "Will ETH reach 20k by the end of the year 2025?";
 
         new PredictionMarketChallenge{ value: initialLiquidity }(deployer, question, initialTokenValue);
     }

@@ -49,13 +49,19 @@ export function PredictionMarketInfoLP() {
       </div>
     );
 
-  const predictionOutcome1 = prediction[1];
-  const predictionOutcome2 = prediction[2];
   const token1Reserve = prediction[5];
   const token2Reserve = prediction[6];
   const ethCollateral = prediction[11];
   const lpTradingRevenue = prediction[12];
+
   const tokenValue = prediction[4];
+  const predictionOutcome1 = prediction[1];
+  const predictionOutcome2 = prediction[2];
+  const isReported = prediction[7];
+  const optionToken1 = prediction[8];
+  const winningToken = prediction[10];
+
+  const winningOption = winningToken === optionToken1 ? predictionOutcome1 : predictionOutcome2;
 
   return (
     <div className="bg-base-100 p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
@@ -86,78 +92,117 @@ export function PredictionMarketInfoLP() {
             <div className="stat flex flex-row items-center justify-center">
               <div>
                 <div className="text-xl">Token Value</div>
-                <div className="text-sm">(Value of winning token in ETH)</div>
+                <div className="text-sm">
+                  {isReported
+                    ? `(Value of winning token "${winningOption}" in ETH)`
+                    : "(Value of winning token in ETH)"}
+                </div>
               </div>
               <div className="text-primary text-xl">{Number(formatEther(BigInt(tokenValue ?? 0))).toFixed(4)} ETH</div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-base-200 p-4 rounded-lg">
-            <h2 className="text-2xl font-semibold mb-2">{predictionOutcome1}</h2>
-            <h3 className="text-lg mb-2">
-              Amount of {predictionOutcome1} tokens <span className="font-bold">hold by prediction market</span>
-            </h3>
-            <div className="stat-value text-lg">
-              {Number(formatEther(BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
-            </div>
-            <h3 className="text-lg mb-2 pt-2">
-              (Value of tokens ETH{" "}
-              {Number(formatEther(BigInt(((token1Reserve ?? 0) * (tokenValue ?? 0)) / BigInt(10 ** 18)))).toFixed(2)} if
-              Oracle reports {predictionOutcome1})
-            </h3>
-            <h3 className="text-lg mb-2 border-t pt-2">
-              Amount of {predictionOutcome1} <span className="font-bold">tokens sold</span>
-            </h3>
-            <div className="stat-value text-lg">
-              {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
-            </div>
-            <h3 className="text-lg mb-2 pt-2">
-              (Value of tokens ETH{" "}
-              {Number(
-                formatEther(
-                  BigInt(
-                    ((BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
+        {!isReported ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-base-200 p-4 rounded-lg border-4 border-green-500">
+              <h2 className="text-2xl font-semibold mb-2">&quot;{predictionOutcome1}&quot; Token</h2>
+              <h3 className="text-lg mb-2">
+                Amount of {predictionOutcome1} tokens <span className="font-bold">held by prediction market</span>
+              </h3>
+              <div className="stat-value text-lg">
+                {Number(formatEther(BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
+              </div>
+              <h3 className="text-sm mb-2 pt-2">
+                (Value of tokens{" "}
+                {Number(formatEther(BigInt(((token1Reserve ?? 0) * (tokenValue ?? 0)) / BigInt(10 ** 18)))).toFixed(2)}{" "}
+                ETH if Oracle reports {predictionOutcome1})
+              </h3>
+              <h3 className="text-lg mb-2 border-t-4 pt-2">
+                Amount of {predictionOutcome1} <span className="font-bold">tokens sold</span>
+              </h3>
+              <div className="stat-value text-lg">
+                {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0))).toFixed(2)} tokens
+              </div>
+              <h3 className="text-sm mb-2 pt-2">
+                (Value of tokens{" "}
+                {Number(
+                  formatEther(
+                    BigInt(
+                      ((BigInt(totalSupply ?? 0) - BigInt(token1Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
+                    ),
                   ),
-                ),
-              ).toFixed(2)}{" "}
-              if Oracle reports {predictionOutcome1})
-            </h3>
-          </div>
+                ).toFixed(2)}{" "}
+                ETH if Oracle reports {predictionOutcome1})
+              </h3>
+            </div>
 
+            <div className="bg-base-200 p-4 rounded-lg border-4 border-red-500">
+              <h2 className="text-2xl font-semibold mb-2">&quot;{predictionOutcome2}&quot; Token</h2>
+              <h3 className="text-lg mb-2">
+                Amount of {predictionOutcome2} tokens <span className="font-bold">held by prediction market</span>
+              </h3>
+              <div className="stat-value text-lg">
+                {Number(formatEther(BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
+              </div>
+              <h3 className="text-sm mb-2 pt-2">
+                (Value of tokens{" "}
+                {Number(formatEther(BigInt(((token2Reserve ?? 0) * (tokenValue ?? 0)) / BigInt(10 ** 18)))).toFixed(2)}{" "}
+                ETH if Oracle reports {predictionOutcome2})
+              </h3>
+              <h3 className="text-lg mb-2 border-t-4 pt-2">
+                Amount of {predictionOutcome2} <span className="font-bold">tokens sold</span>
+              </h3>
+              <div className="stat-value text-lg">
+                {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
+              </div>
+              <h3 className="text-sm mb-2 pt-2">
+                (Value of tokens{" "}
+                {Number(
+                  formatEther(
+                    BigInt(
+                      ((BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
+                    ),
+                  ),
+                ).toFixed(2)}{" "}
+                ETH if Oracle reports {predictionOutcome2})
+              </h3>
+            </div>
+          </div>
+        ) : (
           <div className="bg-base-200 p-4 rounded-lg">
-            <h2 className="text-2xl font-semibold mb-2">{predictionOutcome2}</h2>
+            <h2 className="text-2xl font-semibold mb-2">Oracle reported: {winningOption}</h2>
             <h3 className="text-lg mb-2">
-              Amount of {predictionOutcome2} tokens <span className="font-bold">hold by prediction market</span>
-            </h3>
-            <div className="stat-value text-lg">
-              {Number(formatEther(BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
-            </div>
-            <h3 className="text-lg mb-2 pt-2">
-              (Value of tokens ETH{" "}
-              {Number(formatEther(BigInt(((token2Reserve ?? 0) * (tokenValue ?? 0)) / BigInt(10 ** 18)))).toFixed(2)} if
-              Oracle reports {predictionOutcome2})
-            </h3>
-            <h3 className="text-lg mb-2 border-t pt-2">
-              Amount of {predictionOutcome2} <span className="font-bold">tokens sold</span>
-            </h3>
-            <div className="stat-value text-lg">
-              {Number(formatEther(BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0))).toFixed(2)} tokens
-            </div>
-            <h3 className="text-lg mb-2 pt-2">
-              (Value of tokens ETH{" "}
+              Value of {winningOption} tokens held by prediction market:{" "}
               {Number(
                 formatEther(
                   BigInt(
-                    ((BigInt(totalSupply ?? 0) - BigInt(token2Reserve ?? 0)) * (tokenValue ?? 0)) / BigInt(10 ** 18),
+                    ((winningToken === optionToken1 ? token1Reserve : token2Reserve) * tokenValue) / BigInt(10 ** 18),
                   ),
                 ),
-              ).toFixed(2)}{" "}
-              if Oracle reports {predictionOutcome2})
+              ).toFixed(4)}{" "}
+              ETH
+            </h3>
+            <h3 className="text-sm mb-2 pt-2">
+              Value of {winningOption} tokens held by users:{" "}
+              {Number(
+                formatEther(
+                  BigInt(
+                    ((BigInt(totalSupply ?? 0) -
+                      BigInt(winningToken === optionToken1 ? token1Reserve : token2Reserve)) *
+                      tokenValue) /
+                      BigInt(10 ** 18),
+                  ),
+                ),
+              ).toFixed(4)}{" "}
+              ETH
+            </h3>
+            <h3 className="text-sm mb-2">
+              &quot;{winningToken === optionToken1 ? predictionOutcome2 : predictionOutcome1}&quot; tokens have no value
+              anymore
             </h3>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

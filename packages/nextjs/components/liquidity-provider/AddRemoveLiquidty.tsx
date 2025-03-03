@@ -37,13 +37,19 @@ export function AddRemoveLiquidity() {
   const tokenvalue = prediction[4];
   const isReported = prediction[7];
 
+  if (isReported)
+    return (
+      <>
+        <p className="text-error text-center mb-4">Prediction market is already reported</p>
+      </>
+    );
+
   const isLiquidityProvider = address === prediction[13];
   return (
     <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
       {!isLiquidityProvider && (
         <p className="text-error text-center mb-4">Only the liquidity provider can add or remove liquidity</p>
       )}
-      {isReported && <p className="text-error text-center mb-4">Prediction market is already reported</p>}
 
       <div className="grid grid-cols-2 gap-4">
         {/* Buy Section */}
