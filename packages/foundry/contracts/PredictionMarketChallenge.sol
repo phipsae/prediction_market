@@ -54,6 +54,7 @@ contract PredictionMarketChallenge is Ownable {
     event TokensPurchased(address indexed buyer, Option option, uint256 amount, uint256 ethAmount);
     event TokensSold(address indexed seller, Option option, uint256 amount, uint256 ethAmount);
     event WinningTokensRedeemed(address indexed redeemer, uint256 amount, uint256 ethAmount);
+    event MarketResolved(address indexed resolver, uint256 ethRedeemed, uint256 totalEthToSend);
 
     /////////////////
     /// Modifiers ///
