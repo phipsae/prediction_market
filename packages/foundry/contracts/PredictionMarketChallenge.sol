@@ -53,7 +53,7 @@ contract PredictionMarketChallenge is Ownable {
     event TokensPurchased(address indexed buyer, Option option, uint256 amount, uint256 ethAmount);
     event TokensSold(address indexed seller, Option option, uint256 amount, uint256 ethAmount);
     event WinningTokensRedeemed(address indexed redeemer, uint256 amount, uint256 ethAmount);
-
+    event MarketResolved(address indexed resolver, uint256 totalEthToSend);
     /////////////////
     /// Modifiers ///
     /////////////////
@@ -225,7 +225,7 @@ contract PredictionMarketChallenge is Ownable {
         }
 
         uint256 contractWinningTokens = s_winningToken.balanceOf(address(this));
-        if (contractWinningTokens >= 0) {
+        if (contractWinningTokens > 0) {
             ethRedeemed = (contractWinningTokens * i_initialTokenValue) / PRECISION;
 
             if (ethRedeemed > s_ethCollateral) {
@@ -235,11 +235,8 @@ contract PredictionMarketChallenge is Ownable {
             s_ethCollateral -= ethRedeemed;
         }
 
-        // Add LP revenue to the amount being sent to owner
-        uint256 lpRevenue = s_lpTradingRevenue;
-        uint256 totalEthToSend = ethRedeemed + lpRevenue;
+        uint256 totalEthToSend = ethRedeemed + s_lpTradingRevenue;
 
-        // Reset LP revenue
         s_lpTradingRevenue = 0;
 
         s_winningToken.burn(address(this), contractWinningTokens);
@@ -248,6 +245,8 @@ contract PredictionMarketChallenge is Ownable {
         if (!success) {
             revert PredictionMarketChallenge__ETHTransferFailed();
         }
+
+        emit MarketResolved(msg.sender, totalEthToSend);
 
         return ethRedeemed;
     }
