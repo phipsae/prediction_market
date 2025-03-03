@@ -37,6 +37,7 @@ contract PredictionMarketChallenge is Ownable {
 
     address public immutable i_oracle;
     uint256 public immutable i_initialTokenValue;
+    uint256 public immutable i_virtualTrades;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
 
@@ -86,7 +87,7 @@ contract PredictionMarketChallenge is Ownable {
         s_ethCollateral = msg.value;
 
         uint256 initialTokenAmount = (msg.value * PRECISION) / _initialTokenValue;
-
+        i_virtualTrades = initialTokenAmount / 10;
         i_optionToken1 = new PredictionMarketToken("Yes", "Y", initialTokenAmount);
         i_optionToken2 = new PredictionMarketToken("No", "N", initialTokenAmount);
     }
@@ -113,7 +114,7 @@ contract PredictionMarketChallenge is Ownable {
 
         PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
 
-        if (_amountTokenToBuy > i_optionToken1.balanceOf(address(this))) {
+        if (_amountTokenToBuy > optionToken.balanceOf(address(this))) {
             revert PredictionMarketChallenge__InsufficientTokenReserve();
         }
 
@@ -283,41 +284,40 @@ contract PredictionMarketChallenge is Ownable {
         view
         returns (uint256)
     {
-        /// Amount of unsold tokens contract holds
-        uint256 currentTokenReserve =
-            _option == Option.YES ? i_optionToken1.balanceOf(address(this)) : i_optionToken2.balanceOf(address(this));
-        uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
-        uint256 currentOtherTokenReserve =
-            _option == Option.YES ? i_optionToken2.balanceOf(address(this)) : i_optionToken1.balanceOf(address(this));
+        uint256 currentTokenReserve;
+        uint256 currentOtherTokenReserve;
 
-        /// is the same for both tokens
+        if (_option == Option.YES) {
+            currentTokenReserve = i_optionToken1.balanceOf(address(this));
+            currentOtherTokenReserve = i_optionToken2.balanceOf(address(this));
+        } else {
+            currentTokenReserve = i_optionToken2.balanceOf(address(this));
+            currentOtherTokenReserve = i_optionToken1.balanceOf(address(this));
+        }
+
+        /// Ensure sufficient liquidity when buying
+        if (!_isSelling) {
+            require(currentTokenReserve >= _tradingAmount, "Not enough liquidity");
+        }
+
         uint256 totalTokenSupply = i_optionToken1.totalSupply();
-
         uint256 currentTokenSold = totalTokenSupply - currentTokenReserve;
         uint256 currentOtherTokenSold = totalTokenSupply - currentOtherTokenReserve;
 
+        /// Compute new reserves after trade
+        uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
         uint256 newSupply = totalTokenSupply - newReserve;
 
-        uint256 probabilityStart;
+        /// Probability calculations with virtual liquidity
+        uint256 denominatorStart = currentTokenSold + currentOtherTokenSold + 2 * i_virtualTrades;
+        uint256 probabilityStart = ((currentTokenSold + i_virtualTrades) * PRECISION) / denominatorStart;
 
-        if (currentTokenSold + currentOtherTokenSold == 0) {
-            probabilityStart = PRECISION / 2;
-        } else {
-            probabilityStart = (currentTokenSold * PRECISION) / (currentTokenSold + currentOtherTokenSold);
-        }
+        uint256 denominatorEnd = newSupply + currentOtherTokenSold + 2 * i_virtualTrades;
+        uint256 probabilityEnd = ((newSupply + i_virtualTrades) * PRECISION) / denominatorEnd;
 
-        uint256 probabilityEnd;
-
-        if (newSupply + currentOtherTokenSold == 0) {
-            probabilityEnd = PRECISION / 2;
-        } else {
-            probabilityEnd = (newSupply * PRECISION) / (newSupply + currentOtherTokenSold);
-        }
-
+        /// Compute final price
         uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
-
-        uint256 avg = (i_initialTokenValue * probabilityAvg) / PRECISION;
-        return (avg * _tradingAmount) / PRECISION;
+        return (i_initialTokenValue * probabilityAvg * _tradingAmount) / (PRECISION * PRECISION);
     }
 
     /////////////////////////
