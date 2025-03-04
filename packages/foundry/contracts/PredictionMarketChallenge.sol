@@ -304,17 +304,31 @@ contract PredictionMarketChallenge is Ownable {
         uint256 totalTokenSupply = i_optionToken1.totalSupply();
         uint256 currentTokenSold = totalTokenSupply - currentTokenReserve;
         uint256 currentOtherTokenSold = totalTokenSupply - currentOtherTokenReserve;
+        uint256 totalTokensSoldStart = currentTokenSold + currentOtherTokenSold;
+
+        uint256 minNotSoldStart = 0;
+        if (totalTokensSoldStart < i_virtualTrades) {
+            minNotSoldStart = i_virtualTrades - totalTokensSoldStart;
+        }
 
         /// Compute new reserves after trade
         uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
         uint256 newSupply = totalTokenSupply - newReserve;
 
-        /// Probability calculations with virtual liquidity
-        uint256 denominatorStart = currentTokenSold + currentOtherTokenSold + 2 * i_virtualTrades;
-        uint256 probabilityStart = ((currentTokenSold + i_virtualTrades) * PRECISION) / denominatorStart;
+        uint256 totalTokensSoldEnd = _isSelling
+            ? totalTokensSoldStart - _tradingAmount
+            : totalTokensSoldStart + _tradingAmount;
+        uint256 minNotSoldEnd = 0;
+        if (totalTokensSoldEnd < i_virtualTrades) {
+            minNotSoldEnd = i_virtualTrades - totalTokensSoldEnd;
+        }
 
-        uint256 denominatorEnd = newSupply + currentOtherTokenSold + 2 * i_virtualTrades;
-        uint256 probabilityEnd = ((newSupply + i_virtualTrades) * PRECISION) / denominatorEnd;
+        /// Probability calculations with virtual liquidity
+        uint256 denominatorStart = totalTokensSoldStart + minNotSoldStart;
+        uint256 probabilityStart = ((currentTokenSold + (minNotSoldStart / 2)) * PRECISION) / denominatorStart;
+
+        uint256 denominatorEnd = totalTokensSoldEnd + minNotSoldEnd;
+        uint256 probabilityEnd = ((newSupply + (minNotSoldEnd / 2)) * PRECISION) / denominatorEnd;
 
         /// Compute final price
         uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
