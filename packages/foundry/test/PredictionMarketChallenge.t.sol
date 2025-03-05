@@ -7,7 +7,7 @@ import { PredictionMarketToken } from "../contracts/PredictionMarketToken.sol";
 
 contract PredictionMarketChallengeTest is Test {
     PredictionMarketChallenge public predictionMarket;
-    uint256 initialLiquidity = 10 ether;
+    uint256 initialLiquidity = 1 ether;
     uint256 initialTokenValue = 0.01 ether;
     address oracle = address(1);
     address gambler1 = address(2);
@@ -41,7 +41,7 @@ contract PredictionMarketChallengeTest is Test {
     }
 
     function testBuyTokenWithETH() public {
-        uint256 tradingAmount = 100 ether;
+        uint256 tradingAmount = 10 ether;
         uint256 lpRevenueBefore = predictionMarket.s_lpTradingRevenue();
         uint256 yesTokenBalanceBefore = predictionMarket.i_optionToken1().balanceOf(gambler1);
 
@@ -191,5 +191,16 @@ contract PredictionMarketChallengeTest is Test {
         vm.prank(oracle);
         vm.expectRevert(PredictionMarketChallenge.PredictionMarketChallenge__InsufficientTokenReserve.selector);
         predictionMarket.removeLiquidity(excessiveAmount);
+    }
+
+    function testPriceCalculation() public {
+        uint256 tradingAmount = 10 ether;
+        uint256 ethNeeded = predictionMarket.getBuyPriceInEth(PredictionMarketChallenge.Option.YES, tradingAmount);
+        console.log("ethNeeded", ethNeeded);
+
+        testBuyTokenWithETH();
+
+        uint256 ethNeeded2 = predictionMarket.getBuyPriceInEth(PredictionMarketChallenge.Option.YES, tradingAmount);
+        console.log("ethNeeded2", ethNeeded2);
     }
 }
