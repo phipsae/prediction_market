@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     PredictionMarketChallenge: {
-      address: "0x107d6f280a05f07b59039143ca21e3f917aafa30",
+      address: "0x9aeebff653c45abafb7bf85ee9e800b790dd0f71",
       abi: [
         {
           type: "constructor",
@@ -170,19 +170,6 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "i_virtualTrades",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
           name: "owner",
           inputs: [],
           outputs: [
@@ -320,6 +307,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "resolveMarketAndWithdraw",
+          inputs: [],
+          outputs: [
+            {
+              name: "ethRedeemed",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "s_ethCollateral",
           inputs: [],
           outputs: [
@@ -400,31 +400,6 @@ const deployedContracts = {
           ],
           outputs: [],
           stateMutability: "nonpayable",
-        },
-        {
-          type: "event",
-          name: "MarketResolved",
-          inputs: [
-            {
-              name: "resolver",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "ethRedeemed",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-            {
-              name: "totalEthToSend",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
         },
         {
           type: "event",
@@ -648,7 +623,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1741168024.json",
+      deploymentFile: "run-1740776237.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
