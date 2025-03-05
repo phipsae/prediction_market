@@ -183,7 +183,7 @@ contract PredictionMarketChallenge is Ownable {
         // Set winning option
         s_winningToken = _winningOption == Option.YES ? i_optionToken1 : i_optionToken2;
         s_isReported = true;
-        emit MarketReported(msg.sender, _winningOption, s_winningToken);
+        emit MarketReported(msg.sender, _winningOption, address(s_winningToken));
     }
 
     /**
