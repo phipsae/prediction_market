@@ -53,7 +53,9 @@ contract PredictionMarketChallenge is Ownable {
     event TokensPurchased(address indexed buyer, Option option, uint256 amount, uint256 ethAmount);
     event TokensSold(address indexed seller, Option option, uint256 amount, uint256 ethAmount);
     event WinningTokensRedeemed(address indexed redeemer, uint256 amount, uint256 ethAmount);
+    event MarketReported(address indexed oracle, Option winningOption, address winningToken);
     event MarketResolved(address indexed resolver, uint256 totalEthToSend);
+
     /////////////////
     /// Modifiers ///
     /////////////////
@@ -181,6 +183,7 @@ contract PredictionMarketChallenge is Ownable {
         // Set winning option
         s_winningToken = _winningOption == Option.YES ? i_optionToken1 : i_optionToken2;
         s_isReported = true;
+        emit MarketReported(msg.sender, _winningOption, s_winningToken);
     }
 
     /**
