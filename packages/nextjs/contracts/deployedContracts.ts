@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     PredictionMarketChallenge: {
-      address: "0xcac3efea764287acc5dc551f1554a95ad8788d96",
+      address: "0x107d6f280a05f07b59039143ca21e3f917aafa30",
       abi: [
         {
           type: "constructor",
@@ -320,19 +320,6 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "resolveMarketAndWithdraw",
-          inputs: [],
-          outputs: [
-            {
-              name: "ethRedeemed",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
           name: "s_ethCollateral",
           inputs: [],
           outputs: [
@@ -413,6 +400,31 @@ const deployedContracts = {
           ],
           outputs: [],
           stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "MarketResolved",
+          inputs: [
+            {
+              name: "resolver",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "ethRedeemed",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "totalEthToSend",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
         },
         {
           type: "event",
@@ -636,7 +648,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1740991252.json",
+      deploymentFile: "run-1741168024.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
