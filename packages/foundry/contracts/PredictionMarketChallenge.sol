@@ -23,7 +23,7 @@ contract PredictionMarketChallenge is Ownable {
     error PredictionMarketChallenge__ETHTransferFailed();
     error PredictionMarketChallenge__InsufficientBalance(uint256 _tradingAmount, uint256 _userBalance);
     error PredictionMarketChallenge__InsufficientAllowance(uint256 _tradingAmount, uint256 _allowance);
-
+    error PredictionMarketChallenge__InsufficientLiquidity();
     //////////////////////////
     /// State Variables //////
     //////////////////////////
@@ -37,6 +37,7 @@ contract PredictionMarketChallenge is Ownable {
 
     address public immutable i_oracle;
     uint256 public immutable i_initialTokenValue;
+    uint256 public immutable i_virtualTradePercentage;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
 
@@ -88,7 +89,7 @@ contract PredictionMarketChallenge is Ownable {
         s_ethCollateral = msg.value;
 
         uint256 initialTokenAmount = (msg.value * PRECISION) / _initialTokenValue;
-
+        i_virtualTradePercentage = 10;
         i_optionToken1 = new PredictionMarketToken("Yes", "Y", initialTokenAmount);
         i_optionToken2 = new PredictionMarketToken("No", "N", initialTokenAmount);
     }
@@ -115,7 +116,7 @@ contract PredictionMarketChallenge is Ownable {
 
         PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
 
-        if (_amountTokenToBuy > i_optionToken1.balanceOf(address(this))) {
+        if (_amountTokenToBuy > optionToken.balanceOf(address(this))) {
             revert PredictionMarketChallenge__InsufficientTokenReserve();
         }
 
@@ -323,41 +324,67 @@ contract PredictionMarketChallenge is Ownable {
         view
         returns (uint256)
     {
-        /// Amount of unsold tokens contract holds
-        uint256 currentTokenReserve =
-            _option == Option.YES ? i_optionToken1.balanceOf(address(this)) : i_optionToken2.balanceOf(address(this));
-        uint256 newReserve = _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
-        uint256 currentOtherTokenReserve =
-            _option == Option.YES ? i_optionToken2.balanceOf(address(this)) : i_optionToken1.balanceOf(address(this));
+        (uint256 currentTokenReserve, uint256 currentOtherTokenReserve) = _getCurrentReserves(_option);
 
-        /// is the same for both tokens
+        /// Ensure sufficient liquidity when buying
+        if (!_isSelling) {
+            if (currentTokenReserve < _tradingAmount) {
+                revert PredictionMarketChallenge__InsufficientLiquidity();
+            }
+        }
+
         uint256 totalTokenSupply = i_optionToken1.totalSupply();
-
-        uint256 currentTokenSold = totalTokenSupply - currentTokenReserve;
+        uint256 virtualTrades = _getVirtualTrades();
+        uint256 currentTokenSoldBefore = totalTokenSupply - currentTokenReserve;
         uint256 currentOtherTokenSold = totalTokenSupply - currentOtherTokenReserve;
 
-        uint256 newSupply = totalTokenSupply - newReserve;
+        uint256 totalTokensSoldBefore = currentTokenSoldBefore + currentOtherTokenSold;
 
-        uint256 probabilityStart;
+        uint256 virtualAmountBefore = _calculateVirtualAmount(totalTokensSoldBefore, virtualTrades);
 
-        if (currentTokenSold + currentOtherTokenSold == 0) {
-            probabilityStart = PRECISION / 2;
+        uint256 probabilityBefore =
+            _calculateProbability(currentTokenSoldBefore, virtualAmountBefore, totalTokensSoldBefore);
+
+        /// After trade
+        uint256 currentTokenReserveAfter =
+            _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
+        uint256 currentTokenSoldAfter = totalTokenSupply - currentTokenReserveAfter;
+
+        uint256 totalTokensSoldAfter =
+            _isSelling ? totalTokensSoldBefore - _tradingAmount : totalTokensSoldBefore + _tradingAmount;
+        uint256 virtualAmountAfter = _calculateVirtualAmount(totalTokensSoldAfter, virtualTrades);
+
+        uint256 probabilityAfter =
+            _calculateProbability(currentTokenSoldAfter, virtualAmountAfter, totalTokensSoldAfter);
+
+        /// Compute final price
+        uint256 probabilityAvg = (probabilityBefore + probabilityAfter) / 2;
+        return (i_initialTokenValue * probabilityAvg * _tradingAmount) / (PRECISION * PRECISION);
+    }
+
+    function _getCurrentReserves(Option _option) private view returns (uint256, uint256) {
+        if (_option == Option.YES) {
+            return (i_optionToken1.balanceOf(address(this)), i_optionToken2.balanceOf(address(this)));
         } else {
-            probabilityStart = (currentTokenSold * PRECISION) / (currentTokenSold + currentOtherTokenSold);
+            return (i_optionToken2.balanceOf(address(this)), i_optionToken1.balanceOf(address(this)));
         }
+    }
 
-        uint256 probabilityEnd;
+    function _getVirtualTrades() private view returns (uint256) {
+        return i_optionToken1.totalSupply() * i_virtualTradePercentage / 100;
+    }
 
-        if (newSupply + currentOtherTokenSold == 0) {
-            probabilityEnd = PRECISION / 2;
-        } else {
-            probabilityEnd = (newSupply * PRECISION) / (newSupply + currentOtherTokenSold);
-        }
+    function _calculateVirtualAmount(uint256 _totalTokensSold, uint256 _virtualTrades) private pure returns (uint256) {
+        return _totalTokensSold < _virtualTrades ? _virtualTrades - _totalTokensSold : 0;
+    }
 
-        uint256 probabilityAvg = (probabilityStart + probabilityEnd) / 2;
-
-        uint256 avg = (i_initialTokenValue * probabilityAvg) / PRECISION;
-        return (avg * _tradingAmount) / PRECISION;
+    function _calculateProbability(uint256 tokensSold, uint256 virtualAmount, uint256 totalSold)
+        private
+        pure
+        returns (uint256)
+    {
+        uint256 denominator = totalSold + virtualAmount;
+        return ((tokensSold + (virtualAmount / 2)) * PRECISION) / denominator;
     }
 
     /////////////////////////
