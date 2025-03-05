@@ -6,11 +6,15 @@ export function ProbabilityDisplay({
   token2Reserve,
   tokenAddress,
   label,
+  isReported,
+  winningOption,
 }: {
   token1Reserve: bigint;
   token2Reserve: bigint;
   tokenAddress: string;
   label?: string;
+  isReported: boolean;
+  winningOption?: string;
 }) {
   const erc20Abi = [
     {
@@ -27,6 +31,8 @@ export function ProbabilityDisplay({
     address: tokenAddress as string,
     functionName: "totalSupply",
   });
+
+  if (isReported) return <span className="font-bold">{winningOption}</span>;
 
   const calculateProbability = (_token1Reserve: bigint, _token2Reserve: bigint) => {
     if (_token1Reserve === undefined || _token2Reserve === undefined || totalSupply === undefined) return 0;

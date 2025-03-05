@@ -1,17 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
-import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
 import { parseEther } from "viem";
-import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { TokenBalance } from "~~/components/user/TokenBalance";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export function Redeem() {
   const [amount, setAmount] = useState<bigint>(BigInt(0));
   const tokenAmount = parseEther((amount || BigInt(0)).toString());
-
-  const { data: deployedContractData } = useDeployedContractInfo({ contractName: "PredictionMarketChallenge" });
-  const contractAddress = deployedContractData?.address;
 
   const { data: prediction, isLoading } = useScaffoldReadContract({
     contractName: "PredictionMarketChallenge",
@@ -61,7 +57,7 @@ export function Redeem() {
     <div className="max-w-lg mx-auto p-6 bg-base-100 rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold text-center mb-4">Redeem Winning Tokens</h2>
       {isReported && tokenAddress && winningOption && (
-        <TokenBalance tokenAddress={tokenAddress as string} option={winningOption as string} />
+        <TokenBalance tokenAddress={tokenAddress as string} option={winningOption as string} redeem={true} />
       )}
 
       <div className="flex gap-4">
