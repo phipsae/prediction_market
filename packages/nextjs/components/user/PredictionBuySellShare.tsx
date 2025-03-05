@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ProbabilityDisplay } from "./ProbabilityDisplay";
 import { formatEther, parseEther } from "viem";
 import { useReadContract } from "wagmi";
-import { GiveAllowance } from "~~/components/prediction-market/GiveAllowance";
-import { TokenBalance } from "~~/components/prediction-market/TokenBalance";
+import { GiveAllowance } from "~~/components/user/GiveAllowance";
+import { TokenBalance } from "~~/components/user/TokenBalance";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionIndex: number; colorScheme: string }) {
@@ -75,6 +75,12 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
   const token1Reserve = prediction[5 + optionIndex] as bigint;
   const token2Reserve = prediction[6 - optionIndex] as bigint;
   const ethCollateral = prediction[11];
+  const isReported = prediction[7];
+  const predictionOutcome1 = prediction[1];
+  const predictionOutcome2 = prediction[2];
+  const optionToken1 = prediction[8];
+  const winningToken = prediction[10];
+  const winningOption = winningToken === optionToken1 ? predictionOutcome1 : predictionOutcome2;
 
   const etherToReceive = totalSupply
     ? (parseEther((inputBuyAmount || BigInt(0)).toString()) * ethCollateral) / totalSupply
@@ -83,20 +89,24 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
   return (
     <div className="max-w-lg mx-auto p-4 bg-white rounded-xl shadow-lg space-y-4">
+      <div className="flex justify-center">Tokens available to buy: {formatEther(token1Reserve ?? BigInt(0))}</div>
+
       <ProbabilityDisplay
         token1Reserve={token1Reserve ?? BigInt(0)}
         token2Reserve={token2Reserve ?? BigInt(0)}
         tokenAddress={token1Address as string}
+        isReported={isReported}
+        winningOption={winningOption}
       />
 
       <div className="flex justify-center">
-        <TokenBalance tokenAddress={token1Address as string} option={option as string} />
+        <TokenBalance tokenAddress={token1Address as string} option={option as string} redeem={false} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Buy Section */}
         <div className={`bg-${colorScheme}-50 p-3 rounded-lg`}>
-          <h2 className={`text-lg font-semibold text-${colorScheme}-800 mb-2`}>Buy {option}</h2>
+          <h2 className={`text-lg font-semibold text-${colorScheme}-800 mb-2`}>Buy &quot;{option}&quot;</h2>
           <div className="space-y-2">
             <input
               type="number"
@@ -107,19 +117,22 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
 
             {totalPriceInEth && (
               <>
-                <div className="text-sm">ETH needed: {formatEther(totalPriceInEth)}</div>
+                <div className="text-sm"></div>
 
                 <ProbabilityDisplay
                   token1Reserve={(token1Reserve ?? BigInt(0)) - parseEther((inputBuyAmount || BigInt(0)).toString())}
                   token2Reserve={token2Reserve ?? BigInt(0)}
                   tokenAddress={token1Address as string}
                   label="New Probability"
+                  isReported={isReported}
+                  winningOption={winningOption}
                 />
 
                 {totalSupply && (
                   <div className="text-sm">
-                    You can get: Ξ{formatEther(etherToReceive)}
-                    (winning Ξ{formatEther(etherToWin)})
+                    For {Number(formatEther(totalPriceInEth)).toFixed(4)} ETH you have the chance to win Ξ
+                    {Number(formatEther(etherToReceive)).toFixed(4)} (upside Ξ
+                    {Number(formatEther(etherToWin)).toFixed(4)})
                   </div>
                 )}
               </>
@@ -146,7 +159,7 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
         </div>
 
         <div className="bg-base-100 p-3 rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Sell {option}</h2>
+          <h2 className="text-lg font-semibold mb-2">Sell &quot;{option}&quot;</h2>
           <div className="space-y-2">
             <input
               type="number"
@@ -163,6 +176,8 @@ export function PredictionBuySellShare({ optionIndex, colorScheme }: { optionInd
                   token2Reserve={token2Reserve ?? BigInt(0)}
                   tokenAddress={token1Address as string}
                   label="New Probability"
+                  isReported={isReported}
+                  winningOption={winningOption}
                 />
               </>
             )}

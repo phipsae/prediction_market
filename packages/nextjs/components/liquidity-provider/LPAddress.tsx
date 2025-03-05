@@ -24,7 +24,7 @@ export function LPAddress() {
   return (
     <div className="flex flex-col items-center justify-center">
       <h2 className="text-2xl font-bold text-center mb-4">Liquidity Provider</h2>
-      {!isLp && <span className="text-error">You're not the Liquidity Provider</span>}
+      {!isLp && <span className="text-error">You are not the Liquidity Provider</span>}
       <Address address={prediction[13]} />
     </div>
   );

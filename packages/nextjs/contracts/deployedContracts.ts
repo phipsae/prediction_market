@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     PredictionMarketChallenge: {
-      address: "0x5b66e49c1f3f0be211c0530736a0519c746678a3",
+      address: "0x9aeebff653c45abafb7bf85ee9e800b790dd0f71",
       abi: [
         {
           type: "constructor",
@@ -303,6 +303,19 @@ const deployedContracts = {
             },
           ],
           outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "resolveMarketAndWithdraw",
+          inputs: [],
+          outputs: [
+            {
+              name: "ethRedeemed",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
           stateMutability: "nonpayable",
         },
         {
@@ -610,7 +623,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1740568571.json",
+      deploymentFile: "run-1740776237.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

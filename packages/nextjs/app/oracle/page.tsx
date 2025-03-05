@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { OracleAddress } from "~~/components/oracle/OracleAddress";
 import { ReportPrediction } from "~~/components/oracle/ReportPrediction";
-import { PredictionMarketInfo } from "~~/components/prediction-market/PredictionMarketInfo";
+import { PredictionMarketInfo } from "~~/components/user/PredictionMarketInfo";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
