@@ -32,13 +32,7 @@ export function ProbabilityDisplay({
     functionName: "totalSupply",
   });
 
-  const { data: virtualTradePercentage } = useScaffoldReadContract({
-    contractName: "PredictionMarketChallenge",
-    functionName: "i_virtualTradePercentage",
-  });
-
   if (isReported) return <span className="font-bold">{winningOption}</span>;
-  if (virtualTradePercentage === undefined) return <span className="font-bold">Loading...</span>;
 
   const calculateProbability = (_token1Reserve: bigint, _token2Reserve: bigint) => {
     if (_token1Reserve === undefined || _token2Reserve === undefined || totalSupply === undefined) return 0;
@@ -52,17 +46,8 @@ export function ProbabilityDisplay({
     // Calculate total tokens sold
     const totalTokensSold = token1Sold + token2Sold;
 
-    // Calculate virtual trades (matching the contract logic)
-    const virtualTrades = (totalSupply * BigInt(virtualTradePercentage)) / BigInt(100);
 
-    // Calculate virtual amount
-    const virtualAmount = totalTokensSold < virtualTrades ? virtualTrades - totalTokensSold : BigInt(0);
-
-    // Calculate probability using the same formula as in the contract
-    const denominator = totalTokensSold + virtualAmount;
-    if (denominator === BigInt(0)) return 0.5;
-
-    const probability = Number((token1Sold + virtualAmount / BigInt(2)) * BigInt(1e18)) / Number(denominator);
+    const probability = Number(token1Sold * BigInt(1e18)) / Number(totalTokensSold);
 
     return probability / 1e18;
   };
