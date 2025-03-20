@@ -21,13 +21,13 @@ contract PredictionMarketChallengeTest is Test {
         deal(gambler3, 10 ether);
         deal(gambler1, 10 ether);
         vm.prank(oracle);
-        predictionMarket = new PredictionMarketChallenge{ value: initialLiquidity }(
-            oracle, "Will ETH reach 20k by the end of the year 2025", initialTokenValue
-        );
+        string memory question = "Will ETH reach 20k by the end of the year 2025";
+        predictionMarket =
+            new PredictionMarketChallenge{ value: initialLiquidity }(oracle, question, initialTokenValue, 50, 20);
     }
 
     modifier withFirstPurchase() {
-        uint256 tradingAmount = 100 ether;
+        uint256 tradingAmount = 50 ether;
         uint256 ethNeeded = predictionMarket.getBuyPriceInEth(PredictionMarketChallenge.Option.YES, tradingAmount);
         vm.prank(gambler1);
         predictionMarket.buyTokensWithETH{ value: ethNeeded }(PredictionMarketChallenge.Option.YES, tradingAmount);
@@ -63,11 +63,13 @@ contract PredictionMarketChallengeTest is Test {
     }
 
     function testSellTokenForETH() public withFirstPurchase {
-        uint256 sellAmount = 100 ether;
+        uint256 sellAmount = 99 ether;
         uint256 lpRevenueBefore = predictionMarket.s_lpTradingRevenue();
         uint256 yesTokenBalanceBefore = predictionMarket.i_optionToken1().balanceOf(gambler1);
         uint256 gambler1EthBalanceBefore = address(gambler1).balance;
         PredictionMarketToken tokenContract1 = predictionMarket.i_optionToken1();
+        uint256 tokenBalanceBefore = tokenContract1.balanceOf(gambler1);
+        console.log("tokenBalanceBefore", tokenBalanceBefore);
 
         uint256 ethToReceive = predictionMarket.getSellPriceInEth(PredictionMarketChallenge.Option.YES, sellAmount);
 
@@ -86,7 +88,7 @@ contract PredictionMarketChallengeTest is Test {
         console.log("gambler1EthBalanceBefore", gambler1EthBalanceBefore);
         console.log("gambler1EthBalanceAfter", gambler1EthBalanceAfter);
         console.log("ethToReceive", ethToReceive);
-        // assertEq(gambler1EthBalanceAfter, gambler1EthBalanceBefore + ethToReceive);
+        assertEq(gambler1EthBalanceAfter, gambler1EthBalanceBefore + ethToReceive);
     }
 
     function testReport() public withFirstPurchase {

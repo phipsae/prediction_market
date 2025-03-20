@@ -28,6 +28,8 @@ contract PredictionMarketChallenge is Ownable {
     error PredictionMarketChallenge__LiquidityProviderCantBuyTokens();
     error PredictionMarketChallenge__LiquidityProviderCantSellTokens();
     error PredictionMarketChallenge__InvalidPercentageToLock();
+    error PredictionMarketChallenge__InsufficientTokenBalance();
+
     //////////////////////////
     /// State Variables //////
     //////////////////////////
@@ -110,11 +112,9 @@ contract PredictionMarketChallenge is Ownable {
         i_optionToken2 = new PredictionMarketToken("No", "N", initialTokenAmount, msg.sender);
 
         if (_percentageToLock > 0) {
-            uint256 initialOption1Amount = (initialTokenAmount * _initialOption1Probability * _percentageToLock) /
-                10000;
-            uint256 initialOption2Amount = (initialTokenAmount *
-                (100 - _initialOption1Probability) *
-                _percentageToLock) / 10000;
+            uint256 initialOption1Amount = (initialTokenAmount * _initialOption1Probability * _percentageToLock) / 10000;
+            uint256 initialOption2Amount =
+                (initialTokenAmount * (100 - _initialOption1Probability) * _percentageToLock) / 10000;
 
             bool success1 = i_optionToken1.transfer(msg.sender, initialOption1Amount);
             bool success2 = i_optionToken2.transfer(msg.sender, initialOption2Amount);
@@ -129,10 +129,12 @@ contract PredictionMarketChallenge is Ownable {
      * @param _option The option (YES or NO) to buy tokens for
      * @param _amountTokenToBuy Amount of tokens to purchase
      */
-    function buyTokensWithETH(
-        Option _option,
-        uint256 _amountTokenToBuy
-    ) external payable onlyPredictionOpen withValidOption(_option) {
+    function buyTokensWithETH(Option _option, uint256 _amountTokenToBuy)
+        external
+        payable
+        onlyPredictionOpen
+        withValidOption(_option)
+    {
         if (_amountTokenToBuy == 0) {
             revert PredictionMarketChallenge__AmountMustBeGreaterThanZero();
         }
@@ -167,10 +169,11 @@ contract PredictionMarketChallenge is Ownable {
      * @param _option The option (YES or NO) to sell tokens for
      * @param _tradingAmount The amount of tokens to sell
      */
-    function sellTokensForEth(
-        Option _option,
-        uint256 _tradingAmount
-    ) external onlyPredictionOpen withValidOption(_option) {
+    function sellTokensForEth(Option _option, uint256 _tradingAmount)
+        external
+        onlyPredictionOpen
+        withValidOption(_option)
+    {
         if (_tradingAmount == 0) {
             revert PredictionMarketChallenge__AmountMustBeGreaterThanZero();
         }
@@ -179,14 +182,12 @@ contract PredictionMarketChallenge is Ownable {
             revert PredictionMarketChallenge__LiquidityProviderCantSellTokens();
         }
 
-        uint256 ethToReceive = getSellPriceInEth(_option, _tradingAmount);
-
         PredictionMarketToken optionToken = _option == Option.YES ? i_optionToken1 : i_optionToken2;
-
         uint256 userBalance = optionToken.balanceOf(msg.sender);
         if (userBalance < _tradingAmount) {
             revert PredictionMarketChallenge__InsufficientBalance(_tradingAmount, userBalance);
         }
+        uint256 ethToReceive = getSellPriceInEth(_option, _tradingAmount);
 
         uint256 allowance = optionToken.allowance(msg.sender, address(this));
         if (allowance < _tradingAmount) {
@@ -195,7 +196,7 @@ contract PredictionMarketChallenge is Ownable {
 
         s_lpTradingRevenue -= ethToReceive;
 
-        (bool sent, ) = msg.sender.call{ value: ethToReceive }("");
+        (bool sent,) = msg.sender.call{ value: ethToReceive }("");
         if (!sent) {
             revert PredictionMarketChallenge__ETHTransferFailed();
         }
@@ -245,7 +246,7 @@ contract PredictionMarketChallenge is Ownable {
 
         s_winningToken.burn(msg.sender, _amount);
 
-        (bool success, ) = msg.sender.call{ value: ethToReceive }("");
+        (bool success,) = msg.sender.call{ value: ethToReceive }("");
         if (!success) {
             revert PredictionMarketChallenge__ETHTransferFailed();
         }
@@ -280,7 +281,7 @@ contract PredictionMarketChallenge is Ownable {
 
         s_winningToken.burn(address(this), contractWinningTokens);
 
-        (bool success, ) = msg.sender.call{ value: totalEthToSend }("");
+        (bool success,) = msg.sender.call{ value: totalEthToSend }("");
         if (!success) {
             revert PredictionMarketChallenge__ETHTransferFailed();
         }
@@ -340,7 +341,7 @@ contract PredictionMarketChallenge is Ownable {
         i_optionToken1.burn(address(this), amountTokenToBurn);
         i_optionToken2.burn(address(this), amountTokenToBurn);
 
-        (bool success, ) = msg.sender.call{ value: _ethToWithdraw }("");
+        (bool success,) = msg.sender.call{ value: _ethToWithdraw }("");
         require(success, "ETH transfer failed");
     }
 
@@ -354,11 +355,11 @@ contract PredictionMarketChallenge is Ownable {
      * @param _tradingAmount The amount of tokens
      * @param _isSelling Whether this is a sell calculation
      */
-    function _calculatePriceInEth(
-        Option _option,
-        uint256 _tradingAmount,
-        bool _isSelling
-    ) private view returns (uint256) {
+    function _calculatePriceInEth(Option _option, uint256 _tradingAmount, bool _isSelling)
+        private
+        view
+        returns (uint256)
+    {
         (uint256 currentTokenReserve, uint256 currentOtherTokenReserve) = _getCurrentReserves(_option);
 
         /// Ensure sufficient liquidity when buying
@@ -369,22 +370,21 @@ contract PredictionMarketChallenge is Ownable {
         }
 
         uint256 totalTokenSupply = i_optionToken1.totalSupply();
+
+        /// Before trade
         uint256 currentTokenSoldBefore = totalTokenSupply - currentTokenReserve;
         uint256 currentOtherTokenSold = totalTokenSupply - currentOtherTokenReserve;
 
         uint256 totalTokensSoldBefore = currentTokenSoldBefore + currentOtherTokenSold;
-
         uint256 probabilityBefore = _calculateProbability(currentTokenSoldBefore, totalTokensSoldBefore);
 
         /// After trade
-        uint256 currentTokenReserveAfter = _isSelling
-            ? currentTokenReserve + _tradingAmount
-            : currentTokenReserve - _tradingAmount;
+        uint256 currentTokenReserveAfter =
+            _isSelling ? currentTokenReserve + _tradingAmount : currentTokenReserve - _tradingAmount;
         uint256 currentTokenSoldAfter = totalTokenSupply - currentTokenReserveAfter;
 
-        uint256 totalTokensSoldAfter = _isSelling
-            ? totalTokensSoldBefore - _tradingAmount
-            : totalTokensSoldBefore + _tradingAmount;
+        uint256 totalTokensSoldAfter =
+            _isSelling ? totalTokensSoldBefore - _tradingAmount : totalTokensSoldBefore + _tradingAmount;
 
         uint256 probabilityAfter = _calculateProbability(currentTokenSoldAfter, totalTokensSoldAfter);
 
