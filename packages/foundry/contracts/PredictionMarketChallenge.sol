@@ -45,6 +45,8 @@ contract PredictionMarketChallenge is Ownable {
     uint256 public immutable i_initialTokenValue;
     PredictionMarketToken public immutable i_optionToken1;
     PredictionMarketToken public immutable i_optionToken2;
+    uint256 public immutable i_percentageLocked;
+    uint256 public immutable i_initialProbability;
 
     string public i_question;
     PredictionMarketToken public s_winningToken;
@@ -105,6 +107,8 @@ contract PredictionMarketChallenge is Ownable {
         i_oracle = _oracle;
         i_question = _question;
         i_initialTokenValue = _initialTokenValue;
+        i_initialProbability = _initialOption1Probability;
+        i_percentageLocked = _percentageToLock;
         s_ethCollateral = msg.value;
 
         uint256 initialTokenAmount = (msg.value * PRECISION) / _initialTokenValue;
@@ -429,7 +433,9 @@ contract PredictionMarketChallenge is Ownable {
             address winningToken,
             uint256 ethCollateral,
             uint256 lpTradingRevenue,
-            address predictionMarketOwner
+            address predictionMarketOwner,
+            uint256 initialProbability,
+            uint256 percentageLocked
         )
     {
         question = i_question;
@@ -446,5 +452,7 @@ contract PredictionMarketChallenge is Ownable {
         ethCollateral = s_ethCollateral;
         lpTradingRevenue = s_lpTradingRevenue;
         predictionMarketOwner = owner();
+        initialProbability = i_initialProbability;
+        percentageLocked = i_percentageLocked;
     }
 }
